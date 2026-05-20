@@ -41,6 +41,9 @@ readonly NC='\033[0m'
 REMOVE_CONFIG=false
 REMOVE_DB=false
 REMOVE_ALL=false
+CLEANUP_CRON=false
+CLEANUP_LOGS=false
+REMOVE_DEPS=false
 CONFIRM_UNINSTALL=false
 GOACCESS_INSTALLED=false
 INSTALLED_VERSION=""
@@ -116,6 +119,10 @@ show_usage() {
     echo "  -a, --all          移除所有文件（包括配置和数据库）"
     echo "  -c, --config       移除站点配置文件"
     echo "  -d, --database     移除 GeoIP 数据库"
+    echo "  -C, --cron         自动清理定时任务"
+    echo "  -L, --logs         自动清理日志和历史数据库"
+    echo "  -D, --deps         自动卸载编译依赖（gcc make wget）"
+    echo "  -m, --menu         显示交互式菜单"
     echo "  -y, --yes          跳过确认直接卸载"
     echo "  -h, --help         显示帮助信息"
     echo ""
@@ -123,6 +130,90 @@ show_usage() {
     echo "  $SCRIPT_NAME -y              # 跳过确认，直接卸载程序"
     echo "  $SCRIPT_NAME -a              # 完全卸载，包括所有文件"
     echo "  $SCRIPT_NAME -c -d -y        # 卸载程序并清理配置和数据库"
+    echo "  $SCRIPT_NAME -C -L -y        # 自动清理定时任务和日志"
+    echo "  $SCRIPT_NAME -a -C -L -D -y  # 完整清理，包括依赖卸载"
+    echo "  $SCRIPT_NAME -m              # 显示交互式菜单"
+}
+
+# ================================================================================
+# 交互式菜单
+# ================================================================================
+show_menu() {
+    local choice
+    while true; do
+        print_title "GoAccess 卸载 - 选择操作"
+        echo ""
+        echo "  1. 卸载 GoAccess 主程序"
+        echo "  2. 清理定时任务"
+        echo "  3. 清理日志和历史数据库"
+        echo "  4. 卸载编译依赖"
+        echo "  5. 退出"
+        echo ""
+        print_separator
+        read -p "请输入选项 [1-5]: " choice
+        
+        case "$choice" in
+            1)
+                echo ""
+                log_info "执行：卸载 GoAccess 主程序"
+                REMOVE_ALL=true
+                CONFIRM_UNINSTALL=true
+                CLEANUP_CRON=false
+                CLEANUP_LOGS=false
+                REMOVE_DEPS=false
+                run_uninstall
+                ;;
+            2)
+                echo ""
+                log_info "执行：清理定时任务"
+                CLEANUP_CRON=true
+                CONFIRM_UNINSTALL=true
+                cleanup_cron
+                ;;
+            3)
+                echo ""
+                log_info "执行：清理日志和历史数据库"
+                CLEANUP_LOGS=true
+                cleanup_logs
+                ;;
+            4)
+                echo ""
+                log_info "执行：卸载编译依赖"
+                REMOVE_DEPS=true
+                cleanup_deps
+                ;;
+            5)
+                echo ""
+                log_info "已退出"
+                exit 0
+                ;;
+            *)
+                echo ""
+                log_error "无效选项，请输入 1-5"
+                echo ""
+                ;;
+        esac
+        
+        echo ""
+        read -p "按回车键继续..." 
+    done
+}
+
+run_uninstall() {
+    get_installed_info
+    
+    remove_goaccess_binary
+    remove_build_files
+    remove_lib_files
+    remove_header_files
+    remove_man_pages
+    remove_doc_files
+    update_system_cache
+    remove_config_files
+    remove_geoip_database
+    cleanup_residual
+    
+    verify_uninstall
 }
 
 # ================================================================================
@@ -144,6 +235,22 @@ parse_args() {
             -d|--database)
                 REMOVE_DB=true
                 shift
+                ;;
+            -C|--cron)
+                CLEANUP_CRON=true
+                shift
+                ;;
+            -L|--logs)
+                CLEANUP_LOGS=true
+                shift
+                ;;
+            -D|--deps)
+                REMOVE_DEPS=true
+                shift
+                ;;
+            -m|--menu)
+                show_menu
+                exit 0
                 ;;
             -y|--yes)
                 CONFIRM_UNINSTALL=true
@@ -596,34 +703,132 @@ verify_uninstall() {
 }
 
 # ================================================================================
-# 清理 cron 任务提示
+# 清理定时任务
 # ================================================================================
-cleanup_cron_hint() {
-    print_title "后续操作提示"
+cleanup_cron() {
+    print_title "清理定时任务"
     
-    echo -e "${CYAN}如果之前配置了定时任务，请手动清理：${NC}"
-    echo ""
-    echo "1. 登录宝塔面板"
-    echo "2. 进入 [计划任务] 设置"
-    echo "3. 删除与 GoAccess 相关的定时任务"
-    echo ""
+    if [ "$CLEANUP_CRON" = true ]; then
+        log_info "正在清理定时任务..."
+        
+        if check_command crontab; then
+            local cron_list=$(sudo crontab -l 2>/dev/null || true)
+            if [ -n "$cron_list" ]; then
+                local filtered_cron=$(echo "$cron_list" | grep -v "GoAccess" | grep -v "goaccess" || true)
+                if [ -n "$filtered_cron" ]; then
+                    echo "$filtered_cron" | sudo crontab -
+                    log_success "定时任务已清理（保留非 GoAccess 相关任务）"
+                else
+                    sudo crontab -r 2>/dev/null || true
+                    log_success "所有定时任务已清理"
+                fi
+            else
+                log_info "未发现定时任务"
+            fi
+        else
+            log_warning "crontab 不可用，跳过定时任务清理"
+        fi
+    else
+        log_info "跳过定时任务清理（使用 -C 选项可自动清理）"
+        
+        echo -e "${CYAN}如果之前配置了定时任务，请手动清理：${NC}"
+        echo ""
+        echo "1. 登录宝塔面板"
+        echo "2. 进入 [计划任务] 设置"
+        echo "3. 删除与 GoAccess 相关的定时任务"
+        echo ""
+    fi
     
-    echo -e "${CYAN}如果需要清理日志文件，请运行：${NC}"
     echo ""
-    echo "  # 清理所有 .db 历史数据库"
-    echo "  find /www/wwwroot -name '*.db' -path '*历史数据*' -delete"
-    echo ""
-    echo "  # 清理所有 HTML 报告"
-    echo "  find /www/wwwroot -name '*-log.html' -delete"
-    echo ""
+}
+
+# ================================================================================
+# 清理日志和历史数据库
+# ================================================================================
+cleanup_logs() {
+    print_title "清理日志和历史数据库"
     
-    echo -e "${CYAN}如果需要完全卸载编译依赖，请运行：${NC}"
+    if [ "$CLEANUP_LOGS" = true ]; then
+        log_info "正在清理日志文件..."
+        
+        local db_count=$(find /www/wwwroot -name '*.db' -path '*历史数据*' 2>/dev/null | wc -l)
+        if [ "$db_count" -gt 0 ]; then
+            find /www/wwwroot -name '*.db' -path '*历史数据*' -delete
+            log_removed "已清理 $db_count 个历史数据库文件"
+        else
+            log_info "未找到历史数据库文件"
+        fi
+        
+        local html_count=$(find /www/wwwroot -name '*-log.html' 2>/dev/null | wc -l)
+        if [ "$html_count" -gt 0 ]; then
+            find /www/wwwroot -name '*-log.html' -delete
+            log_removed "已清理 $html_count 个 HTML 报告文件"
+        else
+            log_info "未找到 HTML 报告文件"
+        fi
+        
+        log_success "日志和历史数据库清理完成"
+    else
+        log_info "跳过日志清理（使用 -L 选项可自动清理）"
+        
+        echo -e "${CYAN}如果需要清理日志文件，请运行：${NC}"
+        echo ""
+        echo "  # 清理所有 .db 历史数据库"
+        echo "  find /www/wwwroot -name '*.db' -path '*历史数据*' -delete"
+        echo ""
+        echo "  # 清理所有 HTML 报告"
+        echo "  find /www/wwwroot -name '*-log.html' -delete"
+        echo ""
+    fi
+    
     echo ""
-    echo "  # Debian/Ubuntu"
-    echo "  sudo apt-get remove --purge gcc make wget"
-    echo ""
-    echo "  # CentOS/Rocky/AlmaLinux"
-    echo "  sudo yum remove gcc make wget"
+}
+
+# ================================================================================
+# 卸载编译依赖
+# ================================================================================
+cleanup_deps() {
+    print_title "卸载编译依赖"
+    
+    if [ "$REMOVE_DEPS" = true ]; then
+        log_info "正在卸载编译依赖..."
+        
+        if check_command apt-get; then
+            log_info "检测到 Debian/Ubuntu 系统"
+            sudo apt-get remove --purge -y gcc make wget
+            log_success "编译依赖已卸载"
+        elif check_command yum; then
+            log_info "检测到 CentOS/Rocky/AlmaLinux 系统"
+            sudo yum remove -y gcc make wget
+            log_success "编译依赖已卸载"
+        elif check_command dnf; then
+            log_info "检测到 Fedora 系统"
+            sudo dnf remove -y gcc make wget
+            log_success "编译依赖已卸载"
+        else
+            log_error "无法识别包管理器，跳过依赖卸载"
+            echo -e "${CYAN}如果需要完全卸载编译依赖，请运行：${NC}"
+            echo ""
+            echo "  # Debian/Ubuntu"
+            echo "  sudo apt-get remove --purge gcc make wget"
+            echo ""
+            echo "  # CentOS/Rocky/AlmaLinux"
+            echo "  sudo yum remove gcc make wget"
+            echo ""
+        fi
+    else
+        log_info "跳过编译依赖卸载（使用 -D 选项可自动卸载）"
+        
+        echo -e "${CYAN}如果需要完全卸载编译依赖，请运行：${NC}"
+        echo ""
+        echo "  # Debian/Ubuntu"
+        echo "  sudo apt-get remove --purge gcc make wget"
+        echo ""
+        echo "  # CentOS/Rocky/AlmaLinux"
+        echo "  sudo yum remove gcc make wget"
+        echo ""
+    fi
+    
     echo ""
 }
 
@@ -662,8 +867,11 @@ main() {
     remove_geoip_database
     cleanup_residual
     
+    cleanup_cron
+    cleanup_logs
+    cleanup_deps
+    
     verify_uninstall
-    cleanup_cron_hint
     
     exit 0
 }
