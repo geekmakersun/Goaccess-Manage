@@ -589,7 +589,7 @@ print_title "GoAccess 编译安装脚本 v2.0"
 print_title "版本检查"
 
 # 检查是否有 --force 参数
-local force_install=false
+force_install=false
 if [ "$1" = "--force" ]; then
     force_install=true
     log_warning "强制安装模式：将忽略版本检查，重新安装"
@@ -599,7 +599,7 @@ fi
 # 如果不是强制安装，才进行版本检查
 if [ "$force_install" = false ]; then
     check_update_needed
-    local update_needed=$?
+    update_needed=$?
     
     # 根据检查结果决定后续操作
     case "$update_needed" in

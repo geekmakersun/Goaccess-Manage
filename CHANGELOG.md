@@ -4,6 +4,18 @@
 
 ---
 
+## [v2.5.1] - 2026-05-20
+
+### 🐛 修复
+
+#### 安装脚本修复 (安装GoAccess.sh)
+- **修复 `local` 关键字误用**：修复主程序区域错误使用 `local` 声明变量导致的运行错误
+  - `local force_install=false` → `force_install=false`
+  - `local update_needed=$?` → `update_needed=$?`
+  - 问题影响：在函数外部使用 `local` 会导致 `can only be used in a function` 错误
+
+---
+
 ## [v2.5] - 2026-05-20
 
 ### ✨ 功能更新
