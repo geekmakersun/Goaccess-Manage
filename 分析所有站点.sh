@@ -225,6 +225,18 @@ if ! command -v goaccess &> /dev/null; then
 fi
 log_success "GoAccess 已安装"
 
+# 获取 GoAccess 版本并检查是否支持 --keep-db 选项
+GOACCESS_VERSION=$(goaccess --version 2>&1 | head -n 1 | sed -n 's/.*GoAccess v\?\([0-9]*\.[0-9]*\).*/\1/p')
+GOACCESS_MAJOR=${GOACCESS_VERSION%%.*}
+GOACCESS_MINOR=${GOACCESS_VERSION#*.}
+GOACCESS_MINOR=${GOACCESS_MINOR%%.*}
+KEEP_DB_SUPPORTED=false
+if [ -n "$GOACCESS_MAJOR" ] && [ -n "$GOACCESS_MINOR" ]; then
+    if [ "$GOACCESS_MAJOR" -gt 1 ] || { [ "$GOACCESS_MAJOR" -eq 1 ] && [ "$GOACCESS_MINOR" -ge 3 ]; }; then
+        KEEP_DB_SUPPORTED=true
+    fi
+fi
+
 # 检查配置目录是否存在
 if [ ! -d "$CONFIG_DIR" ]; then
     log_error "配置目录不存在: $CONFIG_DIR"
@@ -380,7 +392,7 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     GOACCESS_ARGS+=("--db-path=$db_path")          # 数据持久化路径
 
     # 数据持久化相关
-    [ "$keep_db" = "true" ] || [ "$keep_db" = "1" ] && GOACCESS_ARGS+=("--keep-db=1")
+    [ "$keep_db" = "true" ] || [ "$keep_db" = "1" ] && [ "$KEEP_DB_SUPPORTED" = "true" ] && GOACCESS_ARGS+=("--keep-db=1")
     [ -n "$keep_last" ] && GOACCESS_ARGS+=("--keep-last=$keep_last")
 
     # 日志格式相关（自定义格式）
