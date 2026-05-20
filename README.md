@@ -161,7 +161,7 @@ keep-db=true
 | 系统家族 | 发行版 | 包管理器 |
 |---------|--------|---------|
 | Debian | Debian, Ubuntu, Linux Mint | apt/apt-get |
-| RHEL | CentOS, Rocky, AlmaLinux, RHEL, Fedora | dnf/yum |
+| RHEL | CentOS, Rocky, AlmaLinux, RHEL, Fedora, OpenCloudOS | dnf/yum |
 | Arch | Arch Linux, Manjaro | pacman |
 | SUSE | openSUSE, SLES | zypper |
 

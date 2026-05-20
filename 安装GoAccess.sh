@@ -197,10 +197,12 @@ detect_os() {
         . /etc/os-release
         
         case "$ID" in
-            centos|rocky|almalinux|rhel|fedora)
+            centos|rocky|almalinux|rhel|fedora|opencloudos)
                 OS_FAMILY="RHEL"
                 if [ "$ID" = "fedora" ]; then
                     OS="Fedora"
+                elif [ "$ID" = "opencloudos" ]; then
+                    OS="OpenCloudOS"
                 else
                     OS="${PRETTY_NAME:-CentOS/Rocky/AlmaLinux}"
                 fi
