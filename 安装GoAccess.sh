@@ -857,11 +857,11 @@ else
 # GoAccess 站点配置文件
 # 请根据实际情况修改以下配置
 
-site-name="默认站点"
-log-file="/www/wwwlogs/your-domain.log"
-db-path="/www/wwwroot/历史数据/默认站点.db"
-output-html="/www/wwwroot/your-domain/site-log.html"
-log-format=COMBINED
+site_name="默认站点"
+log_file="/www/wwwlogs/your-domain.log"
+db_path="${SCRIPT_DIR}/GoAccess数据库/默认站点.db"
+output_html="/www/wwwroot/your-domain/site-log.html"
+log_format=COMBINED
 EOF
         log_success "已创建默认站点配置: $DEFAULT_CONFIG"
     else

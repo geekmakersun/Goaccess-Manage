@@ -120,7 +120,7 @@ show_usage() {
     echo "  -c, --config       移除站点配置文件"
     echo "  -d, --database     移除 GeoIP 数据库"
     echo "  -C, --cron         自动清理定时任务"
-    echo "  -L, --logs         自动清理日志和历史数据库"
+    echo "  -L, --logs         自动清理日志和GoAccess数据库"
     echo "  -D, --deps         自动卸载编译依赖（gcc make wget）"
     echo "  -m, --menu         显示交互式菜单"
     echo "  -y, --yes          跳过确认直接卸载"
@@ -145,7 +145,7 @@ show_menu() {
         echo ""
         echo "  1. 卸载 GoAccess 主程序"
         echo "  2. 清理定时任务"
-        echo "  3. 清理日志和历史数据库"
+        echo "  3. 清理日志和GoAccess数据库"
         echo "  4. 卸载编译依赖"
         echo "  5. 退出"
         echo ""
@@ -172,7 +172,7 @@ show_menu() {
                 ;;
             3)
                 echo ""
-                log_info "执行：清理日志和历史数据库"
+                log_info "执行：清理日志和GoAccess数据库"
                 CLEANUP_LOGS=true
                 cleanup_logs
                 ;;
@@ -641,8 +641,9 @@ cleanup_residual() {
         fi
     done
     
-    log_info "清理历史数据目录..."
+    log_info "清理GoAccess数据库目录..."
     local history_dirs=(
+        "${SCRIPT_DIR}/GoAccess数据库"
         "${SCRIPT_DIR}/历史数据"
         "${SCRIPT_DIR}/goaccess_history"
     )
@@ -743,16 +744,16 @@ cleanup_cron() {
 }
 
 # ================================================================================
-# 清理日志和历史数据库
+# 清理日志和GoAccess数据库
 # ================================================================================
 cleanup_logs() {
-    print_title "清理日志和历史数据库"
+    print_title "清理日志和GoAccess数据库"
     
-    local db_count=$(find /www/wwwroot -name '*.db' -path '*历史数据*' 2>/dev/null | wc -l)
+    local db_count=$(find /www/wwwroot -name '*.db' \( -path '*GoAccess数据库*' -o -path '*历史数据*' \) 2>/dev/null | wc -l)
     local html_count=$(find /www/wwwroot -name '*-log.html' 2>/dev/null | wc -l)
     
     echo ""
-    echo "  发现 $db_count 个历史数据库文件"
+    echo "  发现 $db_count 个GoAccess数据库文件"
     echo "  发现 $html_count 个 HTML 报告文件"
     echo ""
     
@@ -761,10 +762,10 @@ cleanup_logs() {
         log_info "正在清理日志文件..."
         
         if [ "$db_count" -gt 0 ]; then
-            find /www/wwwroot -name '*.db' -path '*历史数据*' -delete
-            log_removed "已清理 $db_count 个历史数据库文件"
+            find /www/wwwroot -name '*.db' \( -path '*GoAccess数据库*' -o -path '*历史数据*' \) -delete
+            log_removed "已清理 $db_count 个GoAccess数据库文件"
         else
-            log_info "未找到历史数据库文件"
+            log_info "未找到GoAccess数据库文件"
         fi
         
         if [ "$html_count" -gt 0 ]; then
@@ -774,11 +775,11 @@ cleanup_logs() {
             log_info "未找到 HTML 报告文件"
         fi
         
-        log_success "日志和历史数据库清理完成"
+        log_success "日志和GoAccess数据库清理完成"
     else
         # 交互选择模式
         local choice
-        echo "  1. 清理所有 .db 历史数据库"
+        echo "  1. 清理所有 .db GoAccess数据库"
         echo "  2. 清理所有 HTML 报告"
         echo "  3. 清理所有日志文件（1+2）"
         echo "  4. 跳过清理"
@@ -788,10 +789,10 @@ cleanup_logs() {
         case "$choice" in
             1)
                 if [ "$db_count" -gt 0 ]; then
-                    find /www/wwwroot -name '*.db' -path '*历史数据*' -delete
-                    log_success "已清理 $db_count 个历史数据库文件"
+                    find /www/wwwroot -name '*.db' \( -path '*GoAccess数据库*' -o -path '*历史数据*' \) -delete
+                    log_success "已清理 $db_count 个GoAccess数据库文件"
                 else
-                    log_info "未找到历史数据库文件"
+                    log_info "未找到GoAccess数据库文件"
                 fi
                 ;;
             2)
@@ -804,8 +805,8 @@ cleanup_logs() {
                 ;;
             3)
                 if [ "$db_count" -gt 0 ]; then
-                    find /www/wwwroot -name '*.db' -path '*历史数据*' -delete
-                    log_removed "已清理 $db_count 个历史数据库文件"
+                    find /www/wwwroot -name '*.db' \( -path '*GoAccess数据库*' -o -path '*历史数据*' \) -delete
+                    log_removed "已清理 $db_count 个GoAccess数据库文件"
                 fi
                 if [ "$html_count" -gt 0 ]; then
                     find /www/wwwroot -name '*-log.html' -delete

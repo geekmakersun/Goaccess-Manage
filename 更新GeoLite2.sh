@@ -269,7 +269,7 @@ log_info "下载地址: $GEOIP_URL"
 
 # 如果已有数据库，显示当前大小
 if [ -f "$GEOIP_FILE" ]; then
-    local current_size=$(stat -c%s "$GEOIP_FILE" 2>/dev/null || stat -f%z "$GEOIP_FILE" 2>/dev/null)
+    current_size=$(stat -c%s "$GEOIP_FILE" 2>/dev/null || stat -f%z "$GEOIP_FILE" 2>/dev/null)
     log_info "当前数据库大小: ${current_size} bytes"
 fi
 
@@ -303,7 +303,7 @@ if atomic_update "$TEMP_FILE" "$GEOIP_FILE"; then
 
     # 显示新数据库信息
     if [ -f "$GEOIP_FILE" ]; then
-        local new_size=$(stat -c%s "$GEOIP_FILE" 2>/dev/null || stat -f%z "$GEOIP_FILE" 2>/dev/null)
+        new_size=$(stat -c%s "$GEOIP_FILE" 2>/dev/null || stat -f%z "$GEOIP_FILE" 2>/dev/null)
         echo -e "  ${BLUE}文件大小:${NC} ${new_size} bytes"
         echo -e "  ${BLUE}文件位置:${NC} $GEOIP_FILE"
     fi

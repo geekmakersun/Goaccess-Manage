@@ -21,8 +21,8 @@ set -eo pipefail
 # ================================================================================
 readonly SCRIPT_NAME="$(basename "$0")"              # 脚本文件名
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)" # 脚本所在目录（绝对路径）
-readonly CONFIG_DIR="/www/wwwroot/运行配置"          # 运行配置目录（生效的配置）
-readonly DB_DIR="/www/wwwroot/历史数据"              # 数据持久化目录（历史数据库）
+readonly CONFIG_DIR="$SCRIPT_DIR/站点配置"          # 站点配置目录
+readonly DB_DIR="$SCRIPT_DIR/GoAccess数据库"              # 数据持久化目录（GoAccess数据库）
 
 # ================================================================================
 # ANSI 颜色代码定义（用于美化输出）
@@ -125,14 +125,14 @@ validate_config_file() {
         fi
 
         # 检查是否是 key=value 格式
-        if [[ "$line" =~ ^[a-zA-Z_][a-zA-Z0-9_-]*= ]]; then
+        if [[ "$line" =~ ^[a-zA-Z_][a-zA-Z0-9_]*= ]]; then
             local key="${line%%=*}"    # 提取 key（等号左边）
             local value="${line#*=}"   # 提取 value（等号右边）
             value=$(echo "$value" | sed 's/^["'\'']//;s/["'\'']$//')  # 去除引号
 
             # 检查必需项是否为空
             case "$key" in
-                log-file|db-path|output-html)
+                log_file|db_path|output_html)
                     if [ -z "$value" ]; then
                         log_warning "配置项 '$key' 值为空"
                         errors=$((errors + 1))
@@ -158,18 +158,18 @@ parse_and_validate_config() {
     local config_file=$1
 
     # 清除所有可能用到的配置变量（防止上次分析残留影响）
-    unset log-file db-path output-html log-format
-    unset time-format date-format
-    unset enable-panel disable-panel
-    unset exclude-extension include-extension
-    unset ignore-crawlers ignore-ip ignore-host ignore-referer
+    unset log_file db_path output_html log_format
+    unset time_format date_format
+    unset enable_panel disable_panel
+    unset exclude_extension include_extension
+    unset ignore_crawlers ignore_ip ignore_host ignore_referer
     unset after before
-    unset keep-db keep-last
-    unset html-report-title real-time-html ws-url
-    unset geoip-database
-    unset max-items num-tests no-validation
-    unset anonymize-ip double-decode color no-progress with-output-resolver
-    unset site-name
+    unset keep_db keep_last
+    unset html_report_title real_time_html ws_url
+    unset geoip_database
+    unset max_items num_tests no_validation
+    unset anonymize_ip double_decode color no_progress with_output_resolver
+    unset site_name
 
     # 使用 source 加载配置文件（变量会自动设置到当前 Shell）
     # 2>/dev/null: 隐藏错误输出，我们会自己处理
@@ -179,7 +179,7 @@ parse_and_validate_config() {
     fi
 
     # 验证必需配置项：日志路径、数据库路径、输出路径
-    if [ -z "$log-file" ] || [ -z "$db-path" ] || [ -z "$output-html" ]; then
+    if [ -z "$log_file" ] || [ -z "$db_path" ] || [ -z "$output_html" ]; then
         log_error "配置不完整，缺少必需项"
         return 1
     fi
@@ -315,23 +315,23 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     fi
 
     # 检查日志文件是否存在
-    if [ ! -f "$log-file" ]; then
-        log_warning "日志文件不存在: $log-file"
+    if [ ! -f "$log_file" ]; then
+        log_warning "日志文件不存在: $log_file"
         log_info "跳过此站点（如需统计，请创建日志文件或检查路径）"
         SKIP_COUNT=$((SKIP_COUNT + 1))
         continue
     fi
 
     # 检查日志文件是否可读
-    if [ ! -r "$log-file" ]; then
-        log_warning "日志文件不可读: $log-file"
+    if [ ! -r "$log_file" ]; then
+        log_warning "日志文件不可读: $log_file"
         log_info "请检查文件权限，或确保以 www 用户运行此脚本"
         SKIP_COUNT=$((SKIP_COUNT + 1))
         continue
     fi
 
     # 确保 HTML 报告的输出目录存在（使用 777 权限确保 www 用户可写）
-    OUTPUT_DIR=$(dirname "$output-html")
+    OUTPUT_DIR=$(dirname "$output_html")
     if [ ! -d "$OUTPUT_DIR" ]; then
         log_info "创建输出目录: $OUTPUT_DIR"
         mkdir -p "$OUTPUT_DIR"
@@ -347,7 +347,7 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     fi
 
     # 确保数据库的父目录存在（使用 777 权限确保 www 用户可写）
-    DB_PARENT=$(dirname "$db-path")
+    DB_PARENT=$(dirname "$db_path")
     if [ ! -d "$DB_PARENT" ]; then
         mkdir -p "$DB_PARENT"
         chmod 777 "$DB_PARENT" 2>/dev/null || true
@@ -362,43 +362,43 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     fi
 
     # 设置默认值（如果配置文件中没有指定）
-    [ -z "$log-format" ] && log-format="COMBINED"  # 默认：Nginx 组合格式
-    [ -z "$keep-db" ] && keep-db="true"           # 默认：保留历史数据
-    [ -z "$site-name" ] && site-name="$SITE_NAME" # 默认：站点名使用配置文件名
+    [ -z "$log_format" ] && log_format="COMBINED"  # 默认：Nginx 组合格式
+    [ -z "$keep_db" ] && keep_db="true"           # 默认：保留历史数据
+    [ -z "$site_name" ] && site_name="$SITE_NAME" # 默认：站点名使用配置文件名
 
     # 输出当前配置信息（方便调试）
-    echo -e "  ${BLUE}日志文件:${NC} $log-file"
-    echo -e "  ${BLUE}数据库:${NC}   $db-path"
-    echo -e "  ${BLUE}报告:${NC}     $output-html"
-    echo -e "  ${BLUE}格式:${NC}      $log-format"
+    echo -e "  ${BLUE}日志文件:${NC} $log_file"
+    echo -e "  ${BLUE}数据库:${NC}   $db_path"
+    echo -e "  ${BLUE}报告:${NC}     $output_html"
+    echo -e "  ${BLUE}格式:${NC}      $log_format"
 
     # 构建 GoAccess 命令参数（使用数组，避免空格问题）
     GOACCESS_ARGS=()
-    GOACCESS_ARGS+=("$log-file")                    # 日志文件路径
-    GOACCESS_ARGS+=("-o" "$output-html")            # 输出 HTML 文件
-    GOACCESS_ARGS+=("--log-format=$log-format")    # 日志格式
-    GOACCESS_ARGS+=("--db-path=$db-path")          # 数据持久化路径
+    GOACCESS_ARGS+=("$log_file")                    # 日志文件路径
+    GOACCESS_ARGS+=("-o" "$output_html")            # 输出 HTML 文件
+    GOACCESS_ARGS+=("--log-format=$log_format")    # 日志格式
+    GOACCESS_ARGS+=("--db-path=$db_path")          # 数据持久化路径
 
     # 数据持久化相关
-    [ "$keep-db" = "true" ] || [ "$keep-db" = "1" ] && GOACCESS_ARGS+=("--keep-db=1")
-    [ -n "$keep-last" ] && GOACCESS_ARGS+=("--keep-last=$keep-last")
+    [ "$keep_db" = "true" ] || [ "$keep_db" = "1" ] && GOACCESS_ARGS+=("--keep-db=1")
+    [ -n "$keep_last" ] && GOACCESS_ARGS+=("--keep-last=$keep_last")
 
     # 日志格式相关（自定义格式）
-    [ -n "$time-format" ] && GOACCESS_ARGS+=("--time-format=$time-format")
-    [ -n "$date-format" ] && GOACCESS_ARGS+=("--date-format=$date-format")
+    [ -n "$time_format" ] && GOACCESS_ARGS+=("--time-format=$time_format")
+    [ -n "$date_format" ] && GOACCESS_ARGS+=("--date-format=$date_format")
 
     # 面板显示相关
-    [ -n "$enable-panel" ] && GOACCESS_ARGS+=("--enable-panel=$enable-panel")
-    [ -n "$disable-panel" ] && GOACCESS_ARGS+=("--disable-panel=$disable-panel")
+    [ -n "$enable_panel" ] && GOACCESS_ARGS+=("--enable-panel=$enable_panel")
+    [ -n "$disable_panel" ] && GOACCESS_ARGS+=("--disable-panel=$disable_panel")
 
     # 过滤相关
-    [ -n "$exclude-extension" ] && GOACCESS_ARGS+=("--exclude-extension=$exclude-extension")
-    [ -n "$include-extension" ] && GOACCESS_ARGS+=("--include-extension=$include-extension")
-    [ "$ignore-crawlers" = "true" ] || [ "$ignore-crawlers" = "1" ] && GOACCESS_ARGS+=("--ignore-crawlers")
+    [ -n "$exclude_extension" ] && GOACCESS_ARGS+=("--exclude-extension=$exclude_extension")
+    [ -n "$include_extension" ] && GOACCESS_ARGS+=("--include-extension=$include_extension")
+    [ "$ignore_crawlers" = "true" ] || [ "$ignore_crawlers" = "1" ] && GOACCESS_ARGS+=("--ignore-crawlers")
 
     # 忽略 IP（支持多个，逗号分隔）
-    if [ -n "$ignore-ip" ]; then
-        IFS=',' read -ra IP_ARRAY <<< "$ignore-ip"  # 按逗号分割到数组
+    if [ -n "$ignore_ip" ]; then
+        IFS=',' read -ra IP_ARRAY <<< "$ignore_ip"  # 按逗号分割到数组
         for ip in "${IP_ARRAY[@]}"; do
             ip=$(echo "$ip" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')  # 去除首尾空格
             [ -n "$ip" ] && GOACCESS_ARGS+=("--ignore-ip=$ip")
@@ -406,8 +406,8 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     fi
 
     # 忽略 Host（支持多个，逗号分隔）
-    if [ -n "$ignore-host" ]; then
-        IFS=',' read -ra HOST_ARRAY <<< "$ignore-host"
+    if [ -n "$ignore_host" ]; then
+        IFS=',' read -ra HOST_ARRAY <<< "$ignore_host"
         for host in "${HOST_ARRAY[@]}"; do
             host=$(echo "$host" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
             [ -n "$host" ] && GOACCESS_ARGS+=("--ignore-host=$host")
@@ -419,24 +419,24 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     [ -n "$before" ] && GOACCESS_ARGS+=("--before=$before")
 
     # 输出相关
-    [ -n "$html-report-title" ] && GOACCESS_ARGS+=("--html-report-title=$html-report-title")
-    [ "$real-time-html" = "true" ] || [ "$real-time-html" = "1" ] && GOACCESS_ARGS+=("--real-time-html")
-    [ -n "$ws-url" ] && GOACCESS_ARGS+=("--ws-url=$ws-url")
+    [ -n "$html_report_title" ] && GOACCESS_ARGS+=("--html-report-title=$html_report_title")
+    [ "$real_time_html" = "true" ] || [ "$real_time_html" = "1" ] && GOACCESS_ARGS+=("--real-time-html")
+    [ -n "$ws_url" ] && GOACCESS_ARGS+=("--ws-url=$ws_url")
 
     # GeoIP 相关
-    [ -n "$geoip-database" ] && GOACCESS_ARGS+=("--geoip-database=$geoip-database")
+    [ -n "$geoip_database" ] && GOACCESS_ARGS+=("--geoip-database=$geoip_database")
 
     # 性能相关
-    [ -n "$max-items" ] && GOACCESS_ARGS+=("--max-items=$max-items")
-    [ -n "$num-tests" ] && GOACCESS_ARGS+=("--num-tests=$num-tests")
-    [ "$no-validation" = "true" ] || [ "$no-validation" = "1" ] && GOACCESS_ARGS+=("--no-validation")
+    [ -n "$max_items" ] && GOACCESS_ARGS+=("--max-items=$max_items")
+    [ -n "$num_tests" ] && GOACCESS_ARGS+=("--num-tests=$num_tests")
+    [ "$no_validation" = "true" ] || [ "$no_validation" = "1" ] && GOACCESS_ARGS+=("--no-validation")
 
     # 其他选项
-    [ "$anonymize-ip" = "true" ] || [ "$anonymize-ip" = "1" ] && GOACCESS_ARGS+=("--anonymize-ip")
-    [ "$double-decode" = "true" ] || [ "$double-decode" = "1" ] && GOACCESS_ARGS+=("--double-decode")
+    [ "$anonymize_ip" = "true" ] || [ "$anonymize_ip" = "1" ] && GOACCESS_ARGS+=("--anonymize-ip")
+    [ "$double_decode" = "true" ] || [ "$double_decode" = "1" ] && GOACCESS_ARGS+=("--double-decode")
     [ "$color" = "true" ] || [ "$color" = "1" ] && GOACCESS_ARGS+=("--color")
-    [ "$no-progress" = "true" ] || [ "$no-progress" = "1" ] && GOACCESS_ARGS+=("--no-progress")
-    [ "$with-output-resolver" = "true" ] || [ "$with-output-resolver" = "1" ] && GOACCESS_ARGS+=("--with-output-resolver")
+    [ "$no_progress" = "true" ] || [ "$no_progress" = "1" ] && GOACCESS_ARGS+=("--no-progress")
+    [ "$with_output_resolver" = "true" ] || [ "$with_output_resolver" = "1" ] && GOACCESS_ARGS+=("--with-output-resolver")
 
     # 禁用颜色输出（因为我们使用脚本自己的颜色）
     GOACCESS_ARGS+=("--no-color")
@@ -444,11 +444,13 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     # 执行 GoAccess 分析
     echo -e "  ${GREEN}执行分析...${NC}"
 
-    if goaccess "${GOACCESS_ARGS[@]}" 2>/dev/null; then
-        log_success "完成: $output-html"
+    goaccess_rc=0
+    goaccess "${GOACCESS_ARGS[@]}" 2> >(tee -a "$SCRIPT_DIR/goaccess-error.log" >&2) || goaccess_rc=$?
+    if [ $goaccess_rc -eq 0 ]; then
+        log_success "完成: $output_html"
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
     else
-        log_error "分析失败"
+        log_error "分析失败（详细日志: $SCRIPT_DIR/goaccess-error.log）"
         FAIL_COUNT=$((FAIL_COUNT + 1))
     fi
 done
