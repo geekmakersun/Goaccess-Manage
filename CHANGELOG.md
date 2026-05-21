@@ -27,6 +27,58 @@
 
 ---
 
+## [v3.0.0] - 2026-05-21 16:25 🎉 🔧
+
+<details>
+<summary>展开查看详情</summary>
+
+### 🎉 重大更新
+
+#### 🌐 GoAccess 中文本地化支持
+- **✨ 启用 gettext 编译选项**：在安装脚本中添加 `--enable-gettext` 参数，支持多语言界面
+- **🇨🇳 中文语言配置**：配置模板中启用 `lang=zh`，HTML 报告界面显示中文标签
+- **📅 中文日期格式**：使用 `html_date_format="%Y年%m月%d日 %H:%M"` 格式，符合中文习惯
+- **📝 UTF-8 字符编码**：设置 `html_charset=utf-8`，确保中文字符正确显示
+
+### 🔧 配置优化
+
+#### 📂 自定义配置文件路径
+- **🎯 配置路径统一**：GoAccess 配置文件路径从 `/usr/local/etc/goaccess/` 改为 `/www/wwwroot/GoAccess-管理/`
+- **📁 项目集中管理**：所有配置文件集中在项目目录，便于管理和备份
+- **🔧 编译参数更新**：添加 `--sysconfdir` 参数指定配置文件目录
+
+#### 📦 依赖包完善
+- ** Debian/Ubuntu**：添加 `gettext`、`autopoint` 依赖
+- **📦 RHEL/CentOS**：添加 `gettext`、`gettext-devel` 依赖
+- **📦 Arch**：添加 `gettext` 依赖
+- **📦 SUSE**：添加 `gettext`、`gettext-devel` 依赖
+
+### 📝 脚本更新
+
+#### 📜 安装脚本优化 (安装GoAccess.sh)
+- **🔧 编译参数增强**：添加 `--enable-gettext` 和 `--sysconfdir` 参数
+- **📦 依赖包完善**：各系统家族添加 gettext 相关依赖
+- **📂 配置路径更新**：GoAccess 配置文件保存到项目目录
+
+#### 📜 配置模板更新 (配置模板.conf)
+- **🇨🇳 启用中文语言**：取消 `lang=zh` 的注释，默认启用中文界面
+- **📅 启用中文日期**：取消 `html_date_format` 的注释，使用中文日期格式
+
+#### 📜 分析脚本优化 (分析所有站点.sh)
+- **🔄 恢复语言参数**：移除语言参数检测逻辑，直接传递语言参数
+
+### 💡 升级说明
+
+#### 🔄 从旧版本升级
+1. **卸载旧版本**：运行 `./卸载GoAccess.sh` 卸载旧版 GoAccess
+2. **重新安装**：运行 `./安装GoAccess.sh --force` 重新编译安装
+3. **验证安装**：运行 `goaccess --version` 检查编译参数是否包含 `--enable-gettext`
+4. **重新分析**：运行 `./分析所有站点.sh` 生成中文报告
+
+</details>
+
+---
+
 ## [v2.9.9] - 2026-05-21 16:22 🌈
 
 <details>

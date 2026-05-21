@@ -551,6 +551,10 @@ install_deps() {
             # GeoIP2 支持
             deps+=("libmaxminddb-dev")
             
+            # gettext 支持（多语言支持）
+            deps+=("gettext")
+            deps+=("autopoint")
+            
             # pkg-config（可能需要）
             deps+=("pkg-config")
             
@@ -589,6 +593,10 @@ install_deps() {
                 fi
             fi
             
+            # gettext 支持（多语言支持）
+            deps+=("gettext")
+            deps+=("gettext-devel")
+            
             # pkgconfig
             deps+=("pkgconfig")
             
@@ -608,6 +616,7 @@ install_deps() {
             deps+=("tar")
             deps+=("ncurses")
             deps+=("libmaxminddb")
+            deps+=("gettext")
             deps+=("pkg-config")
             
             log_info "安装依赖包: ${deps[*]}"
@@ -623,6 +632,8 @@ install_deps() {
             deps+=("tar")
             deps+=("ncurses-devel")
             deps+=("libmaxminddb-devel")
+            deps+=("gettext")
+            deps+=("gettext-devel")
             deps+=("pkg-config")
             
             log_info "安装依赖包: ${deps[*]}"
@@ -776,7 +787,11 @@ echo ""
 log_info "配置编译选项..."
 
 # 基础编译参数
-config_args="--enable-utf8"
+config_args="--enable-utf8 --enable-gettext"
+
+# 自定义配置文件目录
+readonly GOACCESS_CONFIG_DIR="/www/wwwroot/GoAccess-管理"
+config_args="$config_args --sysconfdir=$GOACCESS_CONFIG_DIR"
 
 # 检查是否有 GeoIP2 库
 if check_command pkg-config && pkg-config --exists libmaxminddb 2>/dev/null; then
@@ -866,7 +881,7 @@ mkdir -p "$GEOIP_DIR"
 
 # 创建 GoAccess 配置文件以指定 GeoIP 数据库路径
 create_goaccess_config() {
-    local config_file="/usr/local/etc/goaccess/goaccess.conf"
+    local config_file="${GOACCESS_CONFIG_DIR}/goaccess.conf"
     
     log_info "配置 GoAccess 使用 GeoIP 数据库..."
     
@@ -887,7 +902,7 @@ EOF
         
         chmod 644 "$config_file"
         log_success "GoAccess 配置文件已创建: $config_file"
-        log_info "GeoIP 数据库路径: $GEOIP_DIR"
+        log_info "配置文件目录: $GOACCESS_CONFIG_DIR"
     else
         log_info "未检测到 GeoIP 数据库文件，跳过配置"
         log_info "如需使用 GeoIP 功能，请手动下载数据库文件到: $GEOIP_DIR"
