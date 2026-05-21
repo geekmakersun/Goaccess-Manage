@@ -16,6 +16,10 @@
 # 开启严格错误处理模式
 set -eo pipefail
 
+# 设置区域环境变量(确保日志解析正确)
+export LC_TIME="en_US.UTF-8"
+export LANG="zh_CN.UTF-8"
+
 # ================================================================================
 # 常量定义区域（使用 readonly 确保常量不可修改）
 # ================================================================================
@@ -408,7 +412,9 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     [ "$with_output_resolver" = "true" ] || [ "$with_output_resolver" = "1" ] && GOACCESS_ARGS+=("--with-output-resolver")
 
     # 中文本地化选项
-    [ -n "$lang" ] && GOACCESS_ARGS+=("--lang=$lang")
+    # 注意: --lang 参数需要 GoAccess 编译时启用 gettext 支持
+    # 如果遇到 "unrecognized option '--lang=zh'" 错误,请注释掉下面这行
+    # [ -n "$lang" ] && GOACCESS_ARGS+=("--lang=$lang")
     [ -n "$html_charset" ] && GOACCESS_ARGS+=("--html-charset=$html_charset")
     [ -n "$html_date_format" ] && GOACCESS_ARGS+=("--html-date-format=$html_date_format")
     [ -n "$html_num_format" ] && GOACCESS_ARGS+=("--html-num-format=$html_num_format")
