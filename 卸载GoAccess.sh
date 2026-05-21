@@ -26,7 +26,7 @@ readonly GEOIP_DIR="${SCRIPT_DIR}/GeoIP"
 readonly GEOIP_CITY_DB="${GEOIP_DIR}/GeoLite2-City.mmdb"
 readonly GEOIP_ASN_DB="${GEOIP_DIR}/GeoLite2-ASN.mmdb"
 readonly SITES_CONFIG_DIR="${SCRIPT_DIR}/站点配置"
-readonly GOACCESS_CONFIG_DIR="/usr/local/etc/goaccess"
+readonly GOACCESS_CONFIG_DIR="/www/wwwroot/GoAccess-管理"
 
 # ================================================================================
 # ANSI 颜色代码定义
@@ -51,6 +51,7 @@ CONFIRM_UNINSTALL=false
 GOACCESS_INSTALLED=false
 INSTALLED_VERSION=""
 INSTALLED_PATH=""
+DEBUG_MODE=false
 
 # ================================================================================
 # 工具函数库
@@ -85,6 +86,16 @@ log_warning() {
 
 log_removed() {
     echo -e "${RED}[REMOVED] $1${NC}"
+}
+
+log_debug() {
+    if [ "$DEBUG_MODE" = true ]; then
+        echo -e "${CYAN}[DEBUG] $1${NC}"
+    fi
+}
+
+log_step() {
+    echo -e "${BLUE}[STEP] $1${NC}"
 }
 
 check_command() {
@@ -127,6 +138,7 @@ show_usage() {
     echo "  -D, --deps         自动卸载编译依赖（gcc make wget）"
     echo "  -m, --menu         显示交互式菜单"
     echo "  -y, --yes          跳过确认直接卸载"
+    echo "  --debug            启用调试模式，显示详细日志"
     echo "  -h, --help         显示帮助信息"
     echo ""
     echo "示例:"
@@ -259,6 +271,11 @@ parse_args() {
                 CONFIRM_UNINSTALL=true
                 shift
                 ;;
+            --debug)
+                DEBUG_MODE=true
+                log_info "调试模式已启用"
+                shift
+                ;;
             -h|--help)
                 show_usage
                 exit 0
@@ -301,7 +318,8 @@ confirm_uninstall() {
     
     if [ "$REMOVE_DB" = true ]; then
         echo "5. 移除 GoAccess 配置文件"
-        echo "   - 目录: $GOACCESS_CONFIG_DIR"
+        echo "   - 文件: ${GOACCESS_CONFIG_DIR}/goaccess.conf"
+        echo "   - 注意: 仅删除配置文件，不删除项目目录"
     fi
     
     echo ""
@@ -323,18 +341,27 @@ confirm_uninstall() {
 remove_goaccess_binary() {
     print_title "阶段 1：移除 GoAccess 主程序"
     
+    log_step "开始检查 GoAccess 安装状态"
+    log_debug "GOACCESS_INSTALLED=$GOACCESS_INSTALLED"
+    
     if [ "$GOACCESS_INSTALLED" = true ]; then
         log_info "正在移除 GoAccess 二进制文件..."
+        log_debug "目标路径: $INSTALLED_PATH"
         
         local binary_path="$INSTALLED_PATH"
         
         if [ -f "$binary_path" ]; then
+            log_debug "文件存在，准备删除: $binary_path"
             if rm -f "$binary_path"; then
                 log_removed "已移除: $binary_path"
+                log_debug "删除成功"
             else
                 log_error "移除失败: $binary_path"
+                log_debug "删除失败，可能权限不足"
                 return 1
             fi
+        else
+            log_debug "文件不存在: $binary_path"
         fi
         
         log_info "移除可能的其他 GoAccess 相关文件..."
@@ -344,17 +371,23 @@ remove_goaccess_binary() {
             "/bin/goaccess"
         )
         
+        local found_count=0
         for bin_path in "${other_binaries[@]}"; do
+            log_debug "检查路径: $bin_path"
             if [ -f "$bin_path" ] && [ "$bin_path" != "$binary_path" ]; then
+                log_debug "发现额外文件: $bin_path"
                 if rm -f "$bin_path"; then
                     log_removed "已移除: $bin_path"
+                    found_count=$((found_count + 1))
                 fi
             fi
         done
         
+        log_debug "共移除 $found_count 个额外文件"
         log_success "GoAccess 主程序已移除"
     else
         log_warning "未检测到已安装的 GoAccess，跳过"
+        log_debug "跳过主程序移除步骤"
     fi
     echo ""
 }
@@ -365,30 +398,40 @@ remove_goaccess_binary() {
 remove_build_files() {
     print_title "阶段 2：移除编译文件"
     
-    log_info "正在清理编译中间文件..."
+    log_step "开始清理编译中间文件"
+    log_debug "WORK_DIR=$WORK_DIR"
     
     if [ -d "$WORK_DIR" ]; then
+        log_debug "编译目录存在，准备删除: $WORK_DIR"
         if rm -rf "$WORK_DIR"; then
             log_removed "已移除: $WORK_DIR"
             log_success "编译文件清理完成"
         else
             log_error "移除失败: $WORK_DIR"
+            log_debug "删除失败，可能目录被占用或权限不足"
         fi
     else
         log_info "编译目录不存在，跳过"
+        log_debug "目录不存在: $WORK_DIR"
     fi
     
     log_info "清理源码包..."
     local tar_file="/tmp/goaccess-${GOACCESS_VERSION}.tar.gz"
+    log_debug "检查源码包: $tar_file"
     if [ -f "$tar_file" ]; then
         rm -f "$tar_file"
         log_removed "已移除: $tar_file"
+    else
+        log_debug "源码包不存在: $tar_file"
     fi
     
     local build_dir="/tmp/goaccess-${GOACCESS_VERSION}"
+    log_debug "检查编译目录: $build_dir"
     if [ -d "$build_dir" ]; then
         rm -rf "$build_dir"
         log_removed "已移除: $build_dir"
+    else
+        log_debug "编译目录不存在: $build_dir"
     fi
     
     echo ""
@@ -400,7 +443,7 @@ remove_build_files() {
 remove_lib_files() {
     print_title "阶段 3：移除已编译的库文件"
     
-    log_info "清理 lib 文件..."
+    log_step "开始清理 lib 文件"
     
     local lib_files=(
         "/usr/local/lib/libgoaccess.a"
@@ -411,13 +454,20 @@ remove_lib_files() {
     )
     
     local removed_count=0
+    local checked_count=0
+    
     for lib_path in "${lib_files[@]}"; do
+        checked_count=$((checked_count + 1))
+        log_debug "检查库文件 [$checked_count/${#lib_files[@]}]: $lib_path"
         if [ -f "$lib_path" ]; then
+            log_debug "发现库文件，准备删除: $lib_path"
             rm -f "$lib_path"
             log_removed "已移除: $lib_path"
             removed_count=$((removed_count + 1))
         fi
     done
+    
+    log_debug "共检查 $checked_count 个文件，移除 $removed_count 个"
     
     if [ $removed_count -gt 0 ]; then
         log_success "已移除 $removed_count 个库文件"
@@ -426,9 +476,13 @@ remove_lib_files() {
     fi
     
     log_info "清理 pkg-config 文件..."
-    if [ -f "/usr/local/lib/pkgconfig/goaccess.pc" ]; then
-        rm -f "/usr/local/lib/pkgconfig/goaccess.pc"
-        log_removed "已移除: /usr/local/lib/pkgconfig/goaccess.pc"
+    local pc_file="/usr/local/lib/pkgconfig/goaccess.pc"
+    log_debug "检查 pkg-config 文件: $pc_file"
+    if [ -f "$pc_file" ]; then
+        rm -f "$pc_file"
+        log_removed "已移除: $pc_file"
+    else
+        log_debug "pkg-config 文件不存在: $pc_file"
     fi
     
     echo ""
@@ -440,15 +494,19 @@ remove_lib_files() {
 remove_header_files() {
     print_title "阶段 4：移除头文件"
     
-    log_info "清理 include 目录..."
+    log_step "开始清理 include 目录"
     
     local include_dir="/usr/local/include/goaccess"
+    log_debug "检查头文件目录: $include_dir"
+    
     if [ -d "$include_dir" ]; then
+        log_debug "头文件目录存在，准备删除: $include_dir"
         rm -rf "$include_dir"
         log_removed "已移除: $include_dir"
         log_success "头文件清理完成"
     else
         log_info "include 目录不存在，跳过"
+        log_debug "头文件目录不存在: $include_dir"
     fi
     
     echo ""
@@ -460,7 +518,7 @@ remove_header_files() {
 remove_man_pages() {
     print_title "阶段 5：移除 man 页面"
     
-    log_info "清理 man 页面..."
+    log_step "开始清理 man 页面"
     
     local man_pages=(
         "/usr/local/share/man/man1/goaccess.1"
@@ -468,18 +526,26 @@ remove_man_pages() {
     )
     
     local removed_count=0
+    local checked_count=0
+    
     for man_path in "${man_pages[@]}"; do
+        checked_count=$((checked_count + 1))
+        log_debug "检查 man 页面 [$checked_count/${#man_pages[@]}]: $man_path"
         if [ -f "$man_path" ]; then
+            log_debug "发现 man 页面，准备删除: $man_path"
             rm -f "$man_path"
             log_removed "已移除: $man_path"
             removed_count=$((removed_count + 1))
         fi
         if [ -f "${man_path}.gz" ]; then
+            log_debug "发现压缩 man 页面，准备删除: ${man_path}.gz"
             rm -f "${man_path}.gz"
             log_removed "已移除: ${man_path}.gz"
             removed_count=$((removed_count + 1))
         fi
     done
+    
+    log_debug "共检查 $checked_count 个路径，移除 $removed_count 个文件"
     
     if [ $removed_count -gt 0 ]; then
         log_success "已移除 $removed_count 个 man 页面"
@@ -496,21 +562,28 @@ remove_man_pages() {
 remove_doc_files() {
     print_title "阶段 6：移除文档文件"
     
-    log_info "清理文档目录..."
+    log_step "开始清理文档目录"
     
     local doc_dirs=(
         "/usr/local/share/doc/goaccess"
-        "/usr/local/share/doc/${GOACCESS_TAR%.tar.gz}"
+        "/usr/local/share/doc/goaccess-${GOACCESS_VERSION}"
     )
     
     local removed_count=0
+    local checked_count=0
+    
     for doc_path in "${doc_dirs[@]}"; do
+        checked_count=$((checked_count + 1))
+        log_debug "检查文档目录 [$checked_count/${#doc_dirs[@]}]: $doc_path"
         if [ -d "$doc_path" ]; then
+            log_debug "发现文档目录，准备删除: $doc_path"
             rm -rf "$doc_path"
             log_removed "已移除: $doc_path"
             removed_count=$((removed_count + 1))
         fi
     done
+    
+    log_debug "共检查 $checked_count 个目录，移除 $removed_count 个"
     
     if [ $removed_count -gt 0 ]; then
         log_success "已移除 $removed_count 个文档目录"
@@ -527,19 +600,29 @@ remove_doc_files() {
 update_system_cache() {
     print_title "阶段 7：更新系统缓存"
     
+    log_step "开始更新系统缓存"
+    
     log_info "更新 ldconfig 缓存..."
+    log_debug "检查 ldconfig 命令是否可用"
     
     if check_command ldconfig; then
+        log_debug "ldconfig 命令可用，执行 ldconfig"
         ldconfig 2>/dev/null || true
         log_success "共享库缓存已更新"
     else
         log_info "ldconfig 不可用，跳过"
+        log_debug "ldconfig 命令不存在"
     fi
     
     log_info "清理 locate 数据库..."
+    log_debug "检查 updatedb 命令是否可用"
+    
     if check_command updatedb; then
+        log_debug "updatedb 命令可用，执行 updatedb"
         updatedb 2>/dev/null || true
         log_info "locate 数据库已更新"
+    else
+        log_debug "updatedb 命令不存在，跳过"
     fi
     
     echo ""
@@ -551,20 +634,27 @@ update_system_cache() {
 remove_config_files() {
     print_title "阶段 8：移除配置文件"
     
+    log_step "开始处理配置文件"
+    log_debug "REMOVE_CONFIG=$REMOVE_CONFIG"
+    
     if [ "$REMOVE_CONFIG" = true ]; then
         log_info "正在移除站点配置文件..."
+        log_debug "站点配置目录: $SITES_CONFIG_DIR"
         
         if [ -d "$SITES_CONFIG_DIR" ]; then
             local config_count=$(find "$SITES_CONFIG_DIR" -name "*.conf" 2>/dev/null | wc -l)
+            log_debug "发现 $config_count 个配置文件"
             
             if rm -rf "$SITES_CONFIG_DIR"; then
                 log_removed "已移除: $SITES_CONFIG_DIR"
                 log_success "已清理 $config_count 个配置文件"
             else
                 log_error "移除失败: $SITES_CONFIG_DIR"
+                log_debug "删除失败，可能目录被占用或权限不足"
             fi
         else
             log_info "站点配置目录不存在，跳过"
+            log_debug "目录不存在: $SITES_CONFIG_DIR"
         fi
         
         log_info "清理可能残留的 GoAccess 配置..."
@@ -574,15 +664,22 @@ remove_config_files() {
             "~/.goaccessrc"
         )
         
+        local found_count=0
         for config_path in "${residual_configs[@]}"; do
+            log_debug "检查残留配置: $config_path"
             expanded_path="${config_path/#\~/$HOME}"
             if [ -f "$expanded_path" ]; then
+                log_debug "发现残留配置，准备删除: $expanded_path"
                 rm -f "$expanded_path"
                 log_removed "已移除: $expanded_path"
+                found_count=$((found_count + 1))
             fi
         done
+        
+        log_debug "共发现并移除 $found_count 个残留配置"
     else
         log_info "跳过配置文件移除（使用 -c 或 --all 选项可移除）"
+        log_debug "REMOVE_CONFIG=false，跳过此步骤"
     fi
     
     echo ""
@@ -594,34 +691,40 @@ remove_config_files() {
 remove_goaccess_config() {
     print_title "阶段 9：移除 GoAccess 配置文件"
     
+    log_step "开始处理 GoAccess 配置文件"
+    log_debug "REMOVE_DB=$REMOVE_DB"
+    
     if [ "$REMOVE_DB" = true ]; then
         log_info "正在移除 GoAccess 配置文件..."
         
-        if [ -d "$GOACCESS_CONFIG_DIR" ]; then
-            if [ -f "${GOACCESS_CONFIG_DIR}/goaccess.conf" ]; then
-                rm -f "${GOACCESS_CONFIG_DIR}/goaccess.conf"
-                log_removed "已移除: ${GOACCESS_CONFIG_DIR}/goaccess.conf"
-            fi
-            
-            local remaining_config=$(find "$GOACCESS_CONFIG_DIR" -type f 2>/dev/null | wc -l)
-            if [ "$remaining_config" -eq 0 ]; then
-                rm -rf "$GOACCESS_CONFIG_DIR"
-                log_removed "已移除空目录: $GOACCESS_CONFIG_DIR"
-            else
-                log_info "配置目录中还有其他文件，保留目录"
-            fi
+        local config_file="${GOACCESS_CONFIG_DIR}/goaccess.conf"
+        log_debug "配置文件路径: $config_file"
+        
+        if [ -f "$config_file" ]; then
+            log_debug "配置文件存在，准备删除: $config_file"
+            rm -f "$config_file"
+            log_removed "已移除: $config_file"
         else
-            log_info "GoAccess 配置目录不存在，跳过"
+            log_info "GoAccess 配置文件不存在，跳过"
+            log_debug "配置文件不存在: $config_file"
         fi
         
         log_info "清理用户目录下的配置..."
         local home_db="${HOME}/.config/goaccess/GeoLite2-City.mmdb"
+        log_debug "检查用户目录配置: $home_db"
+        
         if [ -f "$home_db" ]; then
+            log_debug "发现用户目录配置，准备删除: $home_db"
             rm -f "$home_db"
             log_removed "已移除: $home_db"
+        else
+            log_debug "用户目录配置不存在: $home_db"
         fi
+        
+        log_info "注意：配置文件目录 $GOACCESS_CONFIG_DIR 为项目目录，不会删除整个目录"
     else
         log_info "跳过 GoAccess 配置文件移除（使用 -d 或 --all 选项可移除）"
+        log_debug "REMOVE_DB=false，跳过此步骤"
     fi
     
     echo ""
@@ -633,6 +736,8 @@ remove_goaccess_config() {
 cleanup_residual() {
     print_title "阶段 10：清理残留数据"
     
+    log_step "开始清理残留数据"
+    
     log_info "清理可能的缓存文件..."
     
     local cache_dirs=(
@@ -641,12 +746,18 @@ cleanup_residual() {
         "/var/tmp/goaccess*"
     )
     
+    local cache_count=0
     for cache_pattern in "${cache_dirs[@]}"; do
+        log_debug "检查缓存模式: $cache_pattern"
         if ls $cache_pattern 1> /dev/null 2>&1; then
+            log_debug "发现匹配的缓存: $cache_pattern"
             rm -rf $cache_pattern 2>/dev/null || true
             log_removed "已清理: $cache_pattern"
+            cache_count=$((cache_count + 1))
         fi
     done
+    
+    log_debug "共清理 $cache_count 个缓存目录"
     
     log_info "清理GoAccess数据库目录..."
     local history_dirs=(
@@ -655,14 +766,19 @@ cleanup_residual() {
         "${SCRIPT_DIR}/goaccess_history"
     )
     
+    local history_count=0
     for history_path in "${history_dirs[@]}"; do
+        log_debug "检查历史数据目录: $history_path"
         if [ -d "$history_path" ]; then
             local db_count=$(find "$history_path" -name "*.db" 2>/dev/null | wc -l)
+            log_debug "发现历史数据目录，包含 $db_count 个数据库文件: $history_path"
             rm -rf "$history_path"
             log_removed "已移除: $history_path ($db_count 个数据库文件)"
+            history_count=$((history_count + 1))
         fi
     done
     
+    log_debug "共清理 $history_count 个历史数据目录"
     log_success "残留数据清理完成"
     echo ""
 }
@@ -673,33 +789,45 @@ cleanup_residual() {
 verify_uninstall() {
     print_title "阶段 11：验证卸载结果"
     
+    log_step "开始验证卸载结果"
+    
     local verify_passed=true
     
+    log_debug "检查 GoAccess 命令是否仍然存在"
     if check_command goaccess; then
         log_error "GoAccess 仍然存在: $(which goaccess)"
+        log_debug "验证失败：GoAccess 命令仍然可用"
         verify_passed=false
     else
         log_success "GoAccess 二进制文件已完全移除"
+        log_debug "验证通过：GoAccess 命令已不存在"
     fi
     
+    log_debug "检查编译目录是否仍然存在"
     if [ -d "$WORK_DIR" ]; then
         log_warning "编译目录未完全清理: $WORK_DIR"
+        log_debug "验证失败：编译目录仍然存在"
         verify_passed=false
     else
         log_success "编译目录已清理"
+        log_debug "验证通过：编译目录已清理"
     fi
     
+    log_debug "检查站点配置目录是否仍然存在"
     if [ "$REMOVE_CONFIG" = true ] && [ -d "$SITES_CONFIG_DIR" ]; then
         log_warning "站点配置目录未完全清理: $SITES_CONFIG_DIR"
+        log_debug "验证失败：站点配置目录仍然存在"
         verify_passed=false
     fi
     
     echo ""
     
     if [ "$verify_passed" = true ]; then
+        log_debug "所有验证通过"
         print_title "卸载完成！"
         return 0
     else
+        log_debug "部分验证未通过"
         print_title "卸载完成（部分残留，见上方警告）"
         return 1
     fi
@@ -711,17 +839,28 @@ verify_uninstall() {
 cleanup_cron() {
     print_title "清理定时任务"
     
+    log_step "开始清理定时任务"
+    log_debug "CLEANUP_CRON=$CLEANUP_CRON"
+    
     if [ "$CLEANUP_CRON" = true ]; then
         log_info "正在清理定时任务..."
+        log_debug "检查 crontab 命令是否可用"
         
         if check_command crontab; then
+            log_debug "crontab 命令可用"
             local cron_list=$(sudo crontab -l 2>/dev/null || true)
+            log_debug "当前定时任务列表长度: ${#cron_list}"
+            
             if [ -n "$cron_list" ]; then
+                log_debug "发现定时任务，开始过滤 GoAccess 相关任务"
                 local filtered_cron=$(echo "$cron_list" | grep -v "GoAccess" | grep -v "goaccess" || true)
+                log_debug "过滤后定时任务长度: ${#filtered_cron}"
+                
                 if [ -n "$filtered_cron" ]; then
                     echo "$filtered_cron" | sudo crontab -
                     log_success "定时任务已清理（保留非 GoAccess 相关任务）"
                 else
+                    log_debug "过滤后无剩余任务，删除所有定时任务"
                     sudo crontab -r 2>/dev/null || true
                     log_success "所有定时任务已清理"
                 fi
@@ -730,9 +869,11 @@ cleanup_cron() {
             fi
         else
             log_warning "crontab 不可用，跳过定时任务清理"
+            log_debug "crontab 命令不存在"
         fi
     else
         log_info "跳过定时任务清理（使用 -C 选项可自动清理）"
+        log_debug "CLEANUP_CRON=false，跳过此步骤"
         
         echo -e "${CYAN}如果之前配置了定时任务，请手动清理：${NC}"
         echo ""
@@ -751,8 +892,16 @@ cleanup_cron() {
 cleanup_logs() {
     print_title "清理日志和GoAccess数据库"
     
+    log_step "开始清理日志和GoAccess数据库"
+    log_debug "CLEANUP_LOGS=$CLEANUP_LOGS"
+    
+    log_debug "搜索 GoAccess 数据库文件..."
     local db_count=$(find /www/wwwroot -name '*.db' \( -path '*GoAccess数据库*' -o -path '*历史数据*' \) 2>/dev/null | wc -l)
+    log_debug "发现 $db_count 个数据库文件"
+    
+    log_debug "搜索 HTML 报告文件..."
     local html_count=$(find /www/wwwroot -name '*-log.html' 2>/dev/null | wc -l)
+    log_debug "发现 $html_count 个 HTML 报告文件"
     
     echo ""
     echo "  发现 $db_count 个GoAccess数据库文件"
@@ -760,10 +909,11 @@ cleanup_logs() {
     echo ""
     
     if [ "$CLEANUP_LOGS" = true ]; then
-        # 自动清理模式
+        log_info "自动清理模式已启用"
         log_info "正在清理日志文件..."
         
         if [ "$db_count" -gt 0 ]; then
+            log_debug "开始删除数据库文件..."
             find /www/wwwroot -name '*.db' \( -path '*GoAccess数据库*' -o -path '*历史数据*' \) -delete
             log_removed "已清理 $db_count 个GoAccess数据库文件"
         else
@@ -771,6 +921,7 @@ cleanup_logs() {
         fi
         
         if [ "$html_count" -gt 0 ]; then
+            log_debug "开始删除 HTML 报告文件..."
             find /www/wwwroot -name '*-log.html' -delete
             log_removed "已清理 $html_count 个 HTML 报告文件"
         else
@@ -779,7 +930,7 @@ cleanup_logs() {
         
         log_success "日志和GoAccess数据库清理完成"
     else
-        # 交互选择模式
+        log_debug "进入交互选择模式"
         local choice
         echo "  1. 清理所有 .db GoAccess数据库"
         echo "  2. 清理所有 HTML 报告"
@@ -787,10 +938,12 @@ cleanup_logs() {
         echo "  4. 跳过清理"
         echo ""
         read -p "  请选择清理选项 [1-4]: " choice
+        log_debug "用户选择: $choice"
         
         case "$choice" in
             1)
                 if [ "$db_count" -gt 0 ]; then
+                    log_debug "执行：清理数据库文件"
                     find /www/wwwroot -name '*.db' \( -path '*GoAccess数据库*' -o -path '*历史数据*' \) -delete
                     log_success "已清理 $db_count 个GoAccess数据库文件"
                 else
@@ -799,6 +952,7 @@ cleanup_logs() {
                 ;;
             2)
                 if [ "$html_count" -gt 0 ]; then
+                    log_debug "执行：清理 HTML 报告文件"
                     find /www/wwwroot -name '*-log.html' -delete
                     log_success "已清理 $html_count 个 HTML 报告文件"
                 else
@@ -806,6 +960,7 @@ cleanup_logs() {
                 fi
                 ;;
             3)
+                log_debug "执行：清理所有日志文件"
                 if [ "$db_count" -gt 0 ]; then
                     find /www/wwwroot -name '*.db' \( -path '*GoAccess数据库*' -o -path '*历史数据*' \) -delete
                     log_removed "已清理 $db_count 个GoAccess数据库文件"
@@ -818,9 +973,11 @@ cleanup_logs() {
                 ;;
             4)
                 log_info "跳过日志清理"
+                log_debug "用户选择跳过清理"
                 ;;
             *)
                 log_error "无效选项"
+                log_debug "用户输入无效选项: $choice"
                 ;;
         esac
     fi
@@ -834,24 +991,33 @@ cleanup_logs() {
 cleanup_deps() {
     print_title "卸载编译依赖"
     
+    log_step "开始卸载编译依赖"
+    log_debug "REMOVE_DEPS=$REMOVE_DEPS"
+    
+    log_debug "检查编译工具是否存在..."
     if check_command gcc || check_command make || check_command wget; then
         log_info "检测到以下编译工具:"
-        check_command gcc && echo "  - gcc"
-        check_command make && echo "  - make"
-        check_command wget && echo "  - wget"
+        check_command gcc && echo "  - gcc" && log_debug "gcc 存在"
+        check_command make && echo "  - make" && log_debug "make 存在"
+        check_command wget && echo "  - wget" && log_debug "wget 存在"
         echo ""
         
         local system_type=""
         local pkg_cmd=""
+        
+        log_debug "检测系统包管理器..."
         if check_command apt-get; then
             system_type="Debian/Ubuntu"
             pkg_cmd="sudo apt-get remove --purge gcc make wget"
+            log_debug "检测到 apt-get 包管理器"
         elif check_command dnf; then
             system_type="Fedora"
             pkg_cmd="sudo dnf remove gcc make wget"
+            log_debug "检测到 dnf 包管理器"
         elif check_command yum; then
             system_type="CentOS/Rocky/AlmaLinux"
             pkg_cmd="sudo yum remove gcc make wget"
+            log_debug "检测到 yum 包管理器"
         fi
         
         if [ -n "$system_type" ]; then
@@ -861,6 +1027,7 @@ cleanup_deps() {
             
             if [ "$REMOVE_DEPS" = true ]; then
                 log_info "自动卸载编译依赖..."
+                log_debug "执行卸载命令: $pkg_cmd -y"
                 sudo $pkg_cmd -y
                 log_success "编译依赖已卸载"
             else
@@ -868,19 +1035,25 @@ cleanup_deps() {
                 echo "  是否卸载编译依赖 (gcc make wget)?"
                 echo ""
                 read -p "  确认卸载? [y/N]: " choice
+                log_debug "用户选择: $choice"
+                
                 if [[ "$choice" =~ ^[Yy]$ ]]; then
                     log_info "正在卸载编译依赖..."
+                    log_debug "执行卸载命令: $pkg_cmd -y"
                     sudo $pkg_cmd -y
                     log_success "编译依赖已卸载"
                 else
                     log_info "跳过编译依赖卸载"
+                    log_debug "用户选择不卸载"
                 fi
             fi
         else
             log_error "无法识别包管理器，跳过依赖卸载"
+            log_debug "未检测到支持的包管理器"
         fi
     else
         log_info "未检测到 gcc、make、wget，跳过编译依赖卸载"
+        log_debug "编译工具不存在，跳过卸载"
     fi
     
     echo ""
@@ -894,21 +1067,40 @@ main() {
     print_title "GoAccess 彻底卸载脚本"
     echo ""
     
-    parse_args "$@"
+    log_step "脚本启动"
+    log_debug "脚本目录: $SCRIPT_DIR"
+    log_debug "GoAccess 版本: $GOACCESS_VERSION"
+    log_debug "工作目录: $WORK_DIR"
+    log_debug "配置目录: $GOACCESS_CONFIG_DIR"
+    log_debug "站点配置目录: $SITES_CONFIG_DIR"
     
+    log_info "解析命令行参数..."
+    parse_args "$@"
+    log_debug "参数解析完成"
+    log_debug "REMOVE_CONFIG=$REMOVE_CONFIG, REMOVE_DB=$REMOVE_DB, REMOVE_ALL=$REMOVE_ALL"
+    log_debug "CLEANUP_CRON=$CLEANUP_CRON, CLEANUP_LOGS=$CLEANUP_LOGS, REMOVE_DEPS=$REMOVE_DEPS"
+    
+    log_info "检测 GoAccess 安装状态..."
     if ! get_installed_info; then
         log_warning "未检测到已安装的 GoAccess"
+        log_debug "GOACCESS_INSTALLED=false"
         
         if [ "$REMOVE_CONFIG" = false ] && [ "$REMOVE_DB" = false ]; then
             log_info "将仅清理残留文件..."
+            log_debug "启用配置和数据库清理选项"
             REMOVE_CONFIG=true
             REMOVE_DB=true
         fi
     fi
     
     if [ "$CONFIRM_UNINSTALL" = false ]; then
+        log_debug "需要用户确认卸载"
         confirm_uninstall
+    else
+        log_debug "跳过确认步骤（CONFIRM_UNINSTALL=true）"
     fi
+    
+    log_step "开始执行卸载流程..."
     
     remove_goaccess_binary
     remove_build_files
@@ -927,6 +1119,7 @@ main() {
     
     verify_uninstall
     
+    log_step "卸载流程完成"
     exit 0
 }
 
