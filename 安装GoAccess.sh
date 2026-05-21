@@ -491,13 +491,14 @@ check_selinux() {
 }
 
 # --------------------------------------------------------------------------------
-# download_with_retry: 带重试的下载函数
+# download_with_retry: 带重试和进度条的下载函数
 # 参数：$1 - 下载地址，$2 - 保存路径
 # 返回：0 - 下载成功，1 - 下载失败
 # 设计思路：
 # 1. 优先使用 wget
 # 2. 如果 wget 不可用，尝试 curl
 # 3. 最多重试 3 次
+# 4. 显示下载进度条
 # --------------------------------------------------------------------------------
 download_with_retry() {
     local url=$1
@@ -510,11 +511,15 @@ download_with_retry() {
         log_info "下载尝试 ${attempt}/${max_attempts}..."
         
         if check_command wget; then
-            if wget --timeout="$timeout" --tries=1 -q -O "$output" "$url" 2>/dev/null; then
+            echo -e "${CYAN}使用 wget 下载，显示进度条...${NC}"
+            if wget --timeout="$timeout" --tries=1 --progress=bar:force -O "$output" "$url" 2>&1 | grep --line-buffered '%' | sed -u 's/.* \([0-9]*\)%.*/下载进度: \1%/'; then
+                echo ""
                 return 0
             fi
         elif check_command curl; then
-            if curl -L --connect-timeout "$timeout" --max-time 120 -s -o "$output" "$url" 2>/dev/null; then
+            echo -e "${CYAN}使用 curl 下载，显示进度条...${NC}"
+            if curl -L --connect-timeout "$timeout" --max-time 300 --progress-bar -o "$output" "$url" 2>&1 | tr '\r' '\n' | grep --line-buffered '%' | sed -u 's/.*\([0-9]*\).*$/下载进度: \1%/'; then
+                echo ""
                 return 0
             fi
         else

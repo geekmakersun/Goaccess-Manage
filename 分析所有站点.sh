@@ -27,7 +27,7 @@ readonly SCRIPT_NAME="$(basename "$0")"              # 脚本文件名
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)" # 脚本所在目录（绝对路径）
 readonly CONFIG_DIR="$SCRIPT_DIR/站点配置"          # 站点配置目录
 readonly LOG_DIR="$SCRIPT_DIR/日志"                  # 日志目录
-readonly ERROR_LOG="$LOG_DIR/分析错误日志.log"   # 错误日志文件
+readonly RUN_LOG="$LOG_DIR/分析运行日志.log"       # GoAccess运行日志文件
 
 # ================================================================================
 # ANSI 颜色代码定义（用于美化输出）
@@ -68,7 +68,9 @@ print_title() {
 # 参数：$1 - 信息内容
 # --------------------------------------------------------------------------------
 log_info() {
-    echo -e "${YELLOW}[INFO] $1${NC}"
+    local msg="$1"
+    echo -e "${YELLOW}[INFO] $msg${NC}"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $msg" >> "$RUN_LOG" 2>/dev/null || true
 }
 
 # --------------------------------------------------------------------------------
@@ -76,7 +78,9 @@ log_info() {
 # 参数：$1 - 成功信息
 # --------------------------------------------------------------------------------
 log_success() {
-    echo -e "${GREEN}[OK] $1${NC}"
+    local msg="$1"
+    echo -e "${GREEN}[OK] $msg${NC}"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [OK] $msg" >> "$RUN_LOG" 2>/dev/null || true
 }
 
 # --------------------------------------------------------------------------------
@@ -84,7 +88,9 @@ log_success() {
 # 参数：$1 - 错误信息
 # --------------------------------------------------------------------------------
 log_error() {
-    echo -e "${RED}[ERROR] $1${NC}" >&2
+    local msg="$1"
+    echo -e "${RED}[ERROR] $msg${NC}" >&2
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [ERROR] $msg" >> "$RUN_LOG" 2>/dev/null || true
 }
 
 # --------------------------------------------------------------------------------
@@ -92,7 +98,9 @@ log_error() {
 # 参数：$1 - 警告信息
 # --------------------------------------------------------------------------------
 log_warning() {
-    echo -e "${YELLOW}[WARNING] $1${NC}"
+    local msg="$1"
+    echo -e "${YELLOW}[WARNING] $msg${NC}"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARNING] $msg" >> "$RUN_LOG" 2>/dev/null || true
 }
 
 # --------------------------------------------------------------------------------
@@ -441,12 +449,13 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     echo -e "  ${GREEN}执行分析...${NC}"
 
     goaccess_rc=0
-    goaccess "${GOACCESS_ARGS[@]}" 2> >(tee -a "$ERROR_LOG" >&2) || goaccess_rc=$?
+    goaccess "${GOACCESS_ARGS[@]}" 2> >(tee -a "$RUN_LOG" >&2) || goaccess_rc=$?
+    
     if [ $goaccess_rc -eq 0 ]; then
         log_success "完成: $output_html"
         SUCCESS_COUNT=$((SUCCESS_COUNT + 1))
     else
-        log_error "分析失败（详细日志: $ERROR_LOG）"
+        log_error "分析失败（详细日志: $RUN_LOG）"
         FAIL_COUNT=$((FAIL_COUNT + 1))
     fi
 done

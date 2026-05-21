@@ -173,4 +173,4 @@ geoip-database=/usr/share/GeoIP/GeoLite2-City.mmdb
 
 ---
 
-**最后更新：2026-05-21 21:07 (v3.1.3)**
+**最后更新：2026-05-21 21:31 (v3.1.4)**
