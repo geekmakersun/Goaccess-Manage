@@ -168,6 +168,7 @@ parse_and_validate_config() {
     unset max_items num_tests no_validation
     unset anonymize_ip double_decode color no_progress with_output_resolver
     unset site_name
+    unset lang html_charset html_date_format html_num_format
 
     # 使用 source 加载配置文件（变量会自动设置到当前 Shell）
     # 2>/dev/null: 隐藏错误输出，我们会自己处理
@@ -405,6 +406,12 @@ for CONFIG_FILE in "$CONFIG_DIR"/*.conf; do
     [ "$color" = "true" ] || [ "$color" = "1" ] && GOACCESS_ARGS+=("--color")
     [ "$no_progress" = "true" ] || [ "$no_progress" = "1" ] && GOACCESS_ARGS+=("--no-progress")
     [ "$with_output_resolver" = "true" ] || [ "$with_output_resolver" = "1" ] && GOACCESS_ARGS+=("--with-output-resolver")
+
+    # 中文本地化选项
+    [ -n "$lang" ] && GOACCESS_ARGS+=("--lang=$lang")
+    [ -n "$html_charset" ] && GOACCESS_ARGS+=("--html-charset=$html_charset")
+    [ -n "$html_date_format" ] && GOACCESS_ARGS+=("--html-date-format=$html_date_format")
+    [ -n "$html_num_format" ] && GOACCESS_ARGS+=("--html-num-format=$html_num_format")
 
     # 禁用颜色输出（因为我们使用脚本自己的颜色）
     GOACCESS_ARGS+=("--no-color")
