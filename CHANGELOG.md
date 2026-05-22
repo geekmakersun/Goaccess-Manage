@@ -27,6 +27,48 @@
 
 ---
 
+## [v3.3.1] - 2026-05-22 13:08 🐛 📝 🔧
+
+<details>
+<summary>展开查看详情</summary>
+
+### 🐛 Bug修复
+
+#### 📋 配置模板路径修复
+- **🐛 修复 GeoIP 数据库路径**：更新配置模板中的 `geoip_database` 路径
+  - 从 `/www/wwwroot/GoAccess-管理/GeoIP/GeoLite2-City.mmdb` 改为 `/www/wwwroot/GoAccess-管理/数据/GeoIP/GeoLite2-City.mmdb`
+  - 适配新的目录结构，确保路径正确
+
+### 📝 文档更新
+
+#### 📖 GeoIP 文档路径修复
+- **📝 更新 README.md 定时任务路径**：修正定时任务中的脚本路径引用
+  - 从 `GeoIP/更新GeoLite2.sh` 改为 `脚本/GeoIP/更新GeoLite2.sh`
+- **📝 更新使用说明.md 脚本位置**：修正脚本位置说明和运行路径
+  - 脚本位置从 `GeoIP/更新GeoLite2.sh` 改为 `脚本/GeoIP/更新GeoLite2.sh`
+  - 运行路径从 `/www/wwwroot/GoAccess-管理/GeoIP` 改为 `/www/wwwroot/GoAccess-管理/脚本/GeoIP`
+
+### 🔧 配置优化
+
+#### 📋 配置模板注释完善
+- **💡 添加路径说明注释**：在 `geoip_database` 配置项添加注释说明
+  - 提示用户需要根据实际安装路径修改
+
+### 💡 设计说明
+
+#### 🔍 问题原因
+- v3.3.0 目录结构重构后，部分文档和配置文件中的路径引用未同步更新
+- 导致用户按照文档操作时可能找不到正确的脚本位置
+
+#### 📚 修复内容
+- 配置模板：1 处路径修复
+- GeoIP 文档：6 处路径修复
+- 所有路径引用已与新的目录结构保持一致
+
+</details>
+
+---
+
 ## [v3.3.0] - 2026-05-22 15:47 📁 ✨ 🔧
 
 <details>
