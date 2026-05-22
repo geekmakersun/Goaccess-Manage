@@ -1,5 +1,14 @@
 # GoAccess 多站点管理系统
 
+**版本：v3.3.4** | **最后更新：2026-05-22**
+
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![GoAccess](https://img.shields.io/badge/GoAccess-Latest-brightgreen.svg)](https://goaccess.io/)
+
+[📖 更新日志](CHANGELOG.md) | [📋 快速入门](文档/GoAccess快速入门指南.md) | [🌍 GeoIP说明](文档/GeoIP/使用说明.md)
+
+---
+
 ## 📋 项目简介
 
 这是一个为**宝塔面板**环境设计的**GoAccess 自动化管理系统**，支持多站点日志分析、数据持久化和自动化报告生成。
@@ -185,7 +194,7 @@ geoip-database=/usr/share/GeoIP/GeoLite2-City.mmdb
 
 ## 📜 许可证
 
-本项目采用 MIT 许可证。
+本项目采用 MIT 许可证。详见 [LICENSE](LICENSE) 文件。
 
 ## 🤝 贡献
 
@@ -194,7 +203,3 @@ geoip-database=/usr/share/GeoIP/GeoLite2-City.mmdb
 ## 📧 联系方式
 
 如有问题，请在 GitHub 上提交 Issue。
-
----
-
-**最后更新：2026-05-22 18:35 (v3.3.3)**
