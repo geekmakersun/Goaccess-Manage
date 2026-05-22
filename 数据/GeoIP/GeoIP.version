@@ -1,0 +1,16 @@
+# GeoIP 数据库版本信息
+# 此文件由更新脚本自动生成，请勿手动修改
+# 数据源: https://github.com/Loyalsoldier/geoip/releases
+
+# 版本信息
+VERSION="202605210051"
+
+# Country.mmdb (国家/地区数据库)
+CITY_FILE="Country.mmdb"
+CITY_SIZE="8533291"
+CITY_UPDATE_TIME="2026-05-22 07:39:40"
+
+# Country-asn.mmdb (ASN 数据库)
+ASN_FILE="Country-asn.mmdb"
+ASN_SIZE="194336"
+ASN_UPDATE_TIME="2026-05-22 07:38:33"
