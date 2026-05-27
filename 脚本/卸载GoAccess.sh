@@ -25,9 +25,10 @@ readonly GOACCESS_VERSION="1.10.2"
 readonly WORK_DIR="/tmp/goaccess-build"
 readonly SITES_CONFIG_DIR="${PROJECT_DIR}/配置/站点配置"
 readonly GOACCESS_CONFIG_DIR="$PROJECT_DIR"
-readonly LOG_DIR="/var/log"
-readonly UNINSTALL_LOG="${LOG_DIR}/卸载日志.log"
-readonly AUDIT_LOG="${LOG_DIR}/审计日志.log"
+
+readonly LOG_DIR_FINAL="/var/log"
+readonly UNINSTALL_LOG="${LOG_DIR_FINAL}/卸载日志.log"
+readonly AUDIT_LOG="${LOG_DIR_FINAL}/审计日志.log"
 
 # ================================================================================
 # ANSI 颜色代码定义
@@ -1058,8 +1059,8 @@ main() {
     print_title "GoAccess 彻底卸载脚本"
     echo ""
     
-    if [ ! -d "$LOG_DIR" ]; then
-        mkdir -p "$LOG_DIR"
+    if [ ! -d "$LOG_DIR_FINAL" ]; then
+        mkdir -p "$LOG_DIR_FINAL"
     fi
     
     echo "========================================" >> "$UNINSTALL_LOG" 2>/dev/null || true

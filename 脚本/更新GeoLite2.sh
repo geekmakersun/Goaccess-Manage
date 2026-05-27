@@ -37,7 +37,7 @@ fi
 # ================================================================================
 readonly SCRIPT_NAME="$(basename "$0")"
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-readonly PROJECT_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+readonly PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 readonly GEOIP_DIR="$PROJECT_DIR/数据/GeoIP"
 readonly GEOIP_CITY_DB="$GEOIP_DIR/GeoLite2-City.mmdb"
 readonly GEOIP_ASN_DB="$GEOIP_DIR/GeoLite2-ASN.mmdb"
@@ -55,6 +55,7 @@ readonly GITHUB_API_URL="https://api.github.com/repos/Loyalsoldier/geoip/release
 readonly GITHUB_RELEASE_BASE="https://github.com/Loyalsoldier/geoip/releases/download"
 readonly JSDELIVR_BASE="https://cdn.jsdelivr.net/gh/Loyalsoldier/geoip@"
 readonly FASTLY_JSDELIVR_BASE="https://fastly.jsdelivr.net/gh/Loyalsoldier/geoip@"
+readonly BYTEMIRA_CDN_BASE="https://gcore.jsdelivr.net/gh/Loyalsoldier/geoip@"
 
 readonly TIMEOUT=120
 readonly MAX_RETRIES=3
@@ -262,9 +263,10 @@ download_with_cdn_fallback() {
     local github_url="${GITHUB_RELEASE_BASE}/${tag}/${filename}"
     local jsdelivr_url="${JSDELIVR_BASE}${tag}/${filename}"
     local fastly_url="${FASTLY_JSDELIVR_BASE}${tag}/${filename}"
+    local bytemira_url="${BYTEMIRA_CDN_BASE}${tag}/${filename}"
     
-    local urls=("$github_url" "$jsdelivr_url" "$fastly_url")
-    local cdn_names=("GitHub" "JSDelivr" "Fastly JSDelivr")
+    local urls=("$bytemira_url" "$jsdelivr_url" "$fastly_url" "$github_url")
+    local cdn_names=("ByteMirage CDN" "JSDelivr" "Fastly JSDelivr" "GitHub")
     
     for url in "${urls[@]}"; do
         log_info "尝试从 ${cdn_names[$cdn_attempt-1]} 下载..."
@@ -429,6 +431,7 @@ atomic_update() {
         log_info "备份当前数据库到: $backup_file"
         if ! cp "$old_file" "$backup_file"; then
             log_error "备份失败"
+            rm -f "$new_file"
             return 1
         fi
     fi
@@ -458,6 +461,7 @@ atomic_update() {
     log_info "移动新文件到目标位置..."
     if ! mv "$new_file" "$old_file"; then
         log_error "移动文件失败"
+        rm -f "$new_file"
         return 1
     fi
     
@@ -501,6 +505,7 @@ update_database() {
     
     if ! atomic_update "$temp_file" "$db_file"; then
         log_error "更新失败"
+        rm -f "$temp_file"
         return 1
     fi
     
@@ -567,10 +572,11 @@ show_usage() {
     echo ""
     echo "数据源: https://github.com/Loyalsoldier/geoip/releases"
     echo ""
-    echo "CDN 源支持（自动回退）："
-    echo "  1. GitHub Releases (主源)"
+    echo "CDN 源支持（自动回退，按优先级排序）："
+    echo "  1. ByteMirage CDN (gcore.jsdelivr.net) - 推荐用于中国环境"
     echo "  2. JSDelivr CDN (cdn.jsdelivr.net)"
     echo "  3. Fastly JSDelivr CDN (fastly.jsdelivr.net)"
+    echo "  4. GitHub Releases (github.com)"
     echo ""
     echo "示例:"
     echo "  $SCRIPT_NAME              # 更新所有数据库"
@@ -599,6 +605,23 @@ log_audit_start "$@"
 
 log_info "脚本目录: $SCRIPT_DIR"
 log_info "GeoIP 目录: $GEOIP_DIR"
+echo ""
+
+if [ ! -d "$GEOIP_DIR" ]; then
+    mkdir -p "$GEOIP_DIR"
+fi
+
+log_info "清理残留的临时文件..."
+temp_cleanup=0
+for temp_file in "$GEOIP_DIR"/*.tmp.*; do
+    if [ -f "$temp_file" ]; then
+        rm -f "$temp_file"
+        temp_cleanup=$((temp_cleanup + 1))
+    fi
+done
+if [ "$temp_cleanup" -gt 0 ]; then
+    log_success "已清理 $temp_cleanup 个临时文件"
+fi
 echo ""
 
 UPDATE_CITY=true
@@ -669,6 +692,14 @@ echo ""
 
 read_version_file
 
+if [ "$FORCE_UPDATE" != true ] && [ -n "$VERSION" ] && [ "$VERSION" = "$LATEST_TAG" ]; then
+    log_info "当前版本 $VERSION 已是最新版本，无需更新"
+    show_version_info
+    log_audit "GEOIP_UPDATE_SKIPPED | REASON=ALREADY_LATEST | VERSION=$VERSION"
+    log_audit_end 0
+    exit 0
+fi
+
 CITY_SIZE="${CITY_SIZE:-}"
 ASN_SIZE="${ASN_SIZE:-}"
 CITY_UPDATE_TIME="${CITY_UPDATE_TIME:-}"
@@ -704,9 +735,23 @@ fi
 if [ "$UPDATE_SUCCESS" = true ]; then
     write_version_file "$LATEST_TAG" "${CITY_SIZE:-0}" "${ASN_SIZE:-0}" "${CITY_UPDATE_TIME:-未知}" "${ASN_UPDATE_TIME:-未知}"
     log_success "版本信息已更新到: $GEOIP_VERSION_FILE"
+    
+    log_info "更新成功，删除所有旧备份文件..."
+    local purge_count=0
+    for backup_file in "$GEOIP_DIR"/*.backup.*; do
+        if [ -f "$backup_file" ]; then
+            rm -f "$backup_file"
+            purge_count=$((purge_count + 1))
+        fi
+    done
+    if [ "$purge_count" -gt 0 ]; then
+        log_success "已删除 $purge_count 个旧备份文件"
+    else
+        log_info "没有需要删除的备份文件"
+    fi
+else
+    cleanup_old_backups
 fi
-
-cleanup_old_backups
 show_version_info
 
 log_audit "GEOIP_UPDATE_COMPLETE | VERSION=$LATEST_TAG | CITY=$UPDATE_CITY | ASN=$UPDATE_ASN | FORCE=$FORCE_UPDATE"

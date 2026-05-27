@@ -1,6 +1,6 @@
 # GoAccess 多站点管理系统
 
-**版本：v3.3.6** | **最后更新：2026-05-27 20:50**
+**版本：v3.3.7** | **最后更新：2026-05-27 21:57**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GoAccess](https://img.shields.io/badge/GoAccess-Latest-brightgreen.svg)](https://goaccess.io/)
@@ -25,7 +25,7 @@
 ## 📁 目录结构
 
 ```
-GoAccess-管理/                    # 🎯 项目根目录
+GoAccess-Manage/                    # 🎯 项目根目录
 ├── README.md                    # 📖 主文档
 ├── CHANGELOG.md                 # 📝 更新日志
 ├── LICENSE                      # 📜 许可证文件
@@ -42,25 +42,18 @@ GoAccess-管理/                    # 🎯 项目根目录
 │   ├── 卸载GoAccess.sh          # 卸载脚本
 │   ├── 分析所有站点.sh           # 分析脚本（批量处理）
 │   ├── 配置审计系统.sh          # 审计配置脚本
-│   └── GeoIP/                   # GeoIP 相关脚本
-│       └── 更新GeoLite2.sh      # GeoIP 更新脚本
+│   └── 更新GeoLite2.sh          # GeoIP 更新脚本
 │
 ├── 配置/                         # ⚙️ 配置目录
 │   ├── 配置模板.conf            # 📋 配置模板
 │   └── 站点配置/                # 📝 站点配置文件目录
 │       └── .gitkeep
 │
-├── 数据/                         # 💾 数据目录
-│   └── GeoIP/                   # GeoIP 数据库
-│       ├── GeoLite2-City.mmdb   # 国家/地区数据库
-│       ├── GeoLite2-ASN.mmdb    # ASN 数据库
-│       ├── GeoIP.version        # 版本信息
-│       └── 日志/                # GeoIP 日志
-│           ├── GeoIP更新日志.log
-│           └── 审计日志.log
-│
-└── 日志/                         # 📝 日志目录
-    └── .gitkeep
+└── 数据/                         # 💾 数据目录
+    └── GeoIP/                   # GeoIP 数据库
+        ├── GeoLite2-City.mmdb   # 国家/地区数据库
+        ├── GeoLite2-ASN.mmdb    # ASN 数据库
+        └── GeoIP.version        # 版本信息
 
 /www/wwwroot/
 └── 您的网站/                     # 🌐 各站点目录
@@ -72,7 +65,7 @@ GoAccess-管理/                    # 🎯 项目根目录
 ### 1. 安装 GoAccess
 
 ```bash
-cd /www/wwwroot/GoAccess-管理
+cd /www/wwwroot/GoAccess-Manage
 sudo ./脚本/安装GoAccess.sh
 ```
 
@@ -90,7 +83,7 @@ sudo ./脚本/安装GoAccess.sh --force
 在 **配置/站点配置** 目录中创建配置文件：
 
 ```bash
-cd /www/wwwroot/GoAccess-管理/配置/站点配置
+cd /www/wwwroot/GoAccess-Manage/配置/站点配置
 cp ../配置模板.conf 我的网站.conf
 nano 我的网站.conf
 ```
@@ -98,7 +91,7 @@ nano 我的网站.conf
 ### 3. 生成报告
 
 ```bash
-cd /www/wwwroot/GoAccess-管理
+cd /www/wwwroot/GoAccess-Manage
 # 推荐以 www 用户运行（与网站运行身份一致，避免权限问题）
 sudo -su www ./脚本/分析所有站点.sh
 ```
@@ -114,10 +107,10 @@ sudo -su www ./脚本/分析所有站点.sh
 
 ```bash
 # 每天凌晨 2 点自动分析所有站点（以 www 用户运行）
-0 2 * * * cd /www/wwwroot/GoAccess-管理 && sudo -su www ./脚本/分析所有站点.sh
+0 2 * * * cd /www/wwwroot/GoAccess-Manage && sudo -su www ./脚本/分析所有站点.sh
 
 # 每月 1 号自动更新 GeoIP 数据库（需要 root）
-0 0 1 * * cd /www/wwwroot/GoAccess-管理 && sudo ./脚本/GeoIP/更新GeoLite2.sh
+0 0 1 * * cd /www/wwwroot/GoAccess-Manage && sudo ./脚本/更新GeoLite2.sh
 ```
 
 ## ⚠️ 重要：用户权限说明
@@ -127,7 +120,7 @@ sudo -su www ./脚本/分析所有站点.sh
 | 脚本 | 需要权限 | 推荐运行用户 | 原因 |
 |------|---------|------------|------|
 | 脚本/安装GoAccess.sh | **必须 root** | root | 编译安装需要系统目录写入权限 |
-| 脚本/GeoIP/更新GeoLite2.sh | **必须 root** | root | 需要更新 /usr/share/GeoIP 系统目录 |
+| 脚本/更新GeoLite2.sh | **必须 root** | root | 需要更新 /usr/share/GeoIP 系统目录 |
 | 脚本/分析所有站点.sh | **普通用户** | www | 生成的报告需要被网站用户访问 |
 
 ### 为什么分析脚本要用 www 用户运行？

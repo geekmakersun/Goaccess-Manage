@@ -204,7 +204,7 @@ configure_audit_rules() {
 -w $PROJECT_DIR/配置/配置模板.conf -p wa -k goaccess_config
 
 # 监控日志文件访问
--w $PROJECT_DIR/日志 -p wa -k goaccess_logs
+-w /var/log -p wa -k goaccess_logs
 
 # 监控 GeoIP 数据库变更
 -w $PROJECT_DIR/数据/GeoIP -p wa -k goaccess_geoip_db

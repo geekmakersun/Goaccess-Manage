@@ -27,6 +27,71 @@
 
 ---
 
+## [v3.3.7] - 2026-05-27 21:57 🛡️ 📝 🔧
+
+<details>
+<summary>展开查看详情</summary>
+
+### 🛡️ 路径问题全面修复
+
+#### 📁 统一项目路径命名
+- **🔧 修复路径字符编码**：将所有配置文件和文档中的 `GoAccess-管理` 统一修改为 `GoAccess-Manage`
+- **✨ 修复文件**：
+  - ✅ `配置/站点配置/本地站点.conf` - GeoIP 数据库路径
+  - ✅ `配置/配置模板.conf` - 模板配置路径
+  - ✅ `README.md` - 所有文档引用
+  - ✅ `CHANGELOG.md` - 历史记录路径
+  - ✅ `文档/GeoIP/使用说明.md` - 使用说明文档
+  - ✅ `文档/GeoIP/README.md` - GeoIP 说明文档
+
+#### 📂 目录结构修正
+- **🔧 修正脚本位置**：将文档中的 `脚本/GeoIP/更新GeoLite2.sh` 统一改为 `脚本/更新GeoLite2.sh`
+- **📝 更新 README.md**：修正目录结构图，移除不存在的 `GeoIP/` 子目录
+- **📋 同步所有文档**：确保所有文档中的路径引用与实际目录结构一致
+
+### 🔧 GeoIP 更新脚本优化
+
+#### ⚡ 临时文件清理机制
+- **✨ 新增启动清理**：脚本启动时自动清理残留的 `.tmp.*` 临时文件
+- **🛡️ 完善错误处理**：在下载失败、校验失败、原子更新失败等情况下确保临时文件被清理
+- **🔄 优化日志输出**：添加清理结果提示，提升用户体验
+
+#### 💡 版本检查优化
+- **✅ 智能版本检测**：新增版本检测逻辑，当前版本已是最新时跳过更新
+- **⏰ 避免重复下载**：节省带宽和时间，提升脚本执行效率
+- **📊 完善审计日志**：记录跳过更新的原因
+
+#### 🌏 CDN 优先级优化
+- **🌐 ByteMirage CDN**：新增 `gcore.jsdelivr.net` CDN 源
+- **⚡ 调整下载顺序**：ByteMirage CDN → JSDelivr → Fastly JSDelivr → GitHub（适应中国网络环境）
+- **📝 更新帮助信息**：在 `--help` 输出中说明 CDN 优先级
+
+### 🔑 权限问题修复
+
+#### 🛡️ 文件所有者调整
+- **✅ GeoIP 数据库权限**：将 GeoLite2-City.mmdb 和 GeoLite2-ASN.mmdb 的所有者修改为 www:www
+- **🔧 目录权限修复**：确保 GeoIP 目录权限正确，避免 www 用户无法访问
+
+### 🧪 测试验证
+
+- **✅ 脚本功能验证**：
+  - ✓ GeoIP 更新脚本正常运行
+  - ✓ 版本检查功能正常（已是最新版本时跳过更新）
+  - ✓ 临时文件自动清理功能正常
+  - ✓ CDN 优先级优化生效
+- **✅ GoAccess 分析验证**：
+  - ✓ GeoIP 数据库加载成功
+  - ✓ 报告生成正常
+  - ✓ 站点分析脚本正常运行
+- **✅ 文档一致性验证**：
+  - ✓ README.md 目录结构与实际一致
+  - ✓ 所有文档路径引用正确
+  - ✓ 配置模板与站点配置一致
+
+</details>
+
+---
+
 ## [v3.3.6] - 2026-05-27 20:50 🐛 🔧
 
 <details>
@@ -198,7 +263,7 @@ sudo bash /www/wwwroot/GoAccess-Manage/脚本/安装GoAccess.sh
 
 #### 📋 配置模板路径修复
 - **🐛 修复 GeoIP 数据库路径**：更新配置模板中的 `geoip_database` 路径
-  - 从 `/www/wwwroot/GoAccess-管理/GeoIP/GeoLite2-City.mmdb` 改为 `/www/wwwroot/GoAccess-管理/数据/GeoIP/GeoLite2-City.mmdb`
+  - 从 `/www/wwwroot/GoAccess-Manage/GeoIP/GeoLite2-City.mmdb` 改为 `/www/wwwroot/GoAccess-Manage/数据/GeoIP/GeoLite2-City.mmdb`
   - 适配新的目录结构，确保路径正确
 
 ### 📝 文档更新
@@ -208,7 +273,7 @@ sudo bash /www/wwwroot/GoAccess-Manage/脚本/安装GoAccess.sh
   - 从 `GeoIP/更新GeoLite2.sh` 改为 `脚本/GeoIP/更新GeoLite2.sh`
 - **📝 更新使用说明.md 脚本位置**：修正脚本位置说明和运行路径
   - 脚本位置从 `GeoIP/更新GeoLite2.sh` 改为 `脚本/GeoIP/更新GeoLite2.sh`
-  - 运行路径从 `/www/wwwroot/GoAccess-管理/GeoIP` 改为 `/www/wwwroot/GoAccess-管理/脚本/GeoIP`
+  - 运行路径从 `/www/wwwroot/GoAccess-Manage/GeoIP` 改为 `/www/wwwroot/GoAccess-Manage/脚本/GeoIP`
 
 ### 🔧 配置优化
 
@@ -633,7 +698,7 @@ sudo bash /www/wwwroot/GoAccess-Manage/脚本/安装GoAccess.sh
 ### 🔧 工具/配置更新
 
 #### 📜 安装脚本优化 (安装GoAccess.sh)
-- **📂 配置文件路径调整**：将 GoAccess 配置文件路径从自定义路径 `/www/wwwroot/GoAccess-管理` 改为默认路径 `/usr/local/etc`
+- **📂 配置文件路径调整**：将 GoAccess 配置文件路径从自定义路径 `/www/wwwroot/GoAccess-Manage` 改为默认路径 `/usr/local/etc`
   - 移除 `--sysconfdir` 编译参数，使用 GoAccess 默认配置路径
   - 配置文件位置：`/usr/local/etc/goaccess.conf`
 - **📦 gettext 依赖增强**：完善各系统的 gettext 开发包依赖，确保中文界面支持
@@ -726,7 +791,7 @@ sudo bash /www/wwwroot/GoAccess-Manage/脚本/安装GoAccess.sh
 ### 🔧 工具/配置更新
 
 #### 📜 卸载脚本优化 (卸载GoAccess.sh)
-- **🔄 同步配置文件路径**：将 GoAccess 配置文件路径从 `/usr/local/etc/goaccess/` 更新为 `/www/wwwroot/GoAccess-管理/`
+- **🔄 同步配置文件路径**：将 GoAccess 配置文件路径从 `/usr/local/etc/goaccess/` 更新为 `/www/wwwroot/GoAccess-Manage/`
 - **🛡️ 防误删机制**：修改配置文件清理逻辑，仅删除 `goaccess.conf` 文件，不删除整个项目目录
 - **📝 更新确认提示**：明确提示仅删除配置文件，不删除项目目录
 
@@ -771,7 +836,7 @@ sudo bash /www/wwwroot/GoAccess-Manage/脚本/安装GoAccess.sh
 ### 🔧 配置优化
 
 #### 📂 自定义配置文件路径
-- **🎯 配置路径统一**：GoAccess 配置文件路径从 `/usr/local/etc/goaccess/` 改为 `/www/wwwroot/GoAccess-管理/`
+- **🎯 配置路径统一**：GoAccess 配置文件路径从 `/usr/local/etc/goaccess/` 改为 `/www/wwwroot/GoAccess-Manage/`
 - **📁 项目集中管理**：所有配置文件集中在项目目录，便于管理和备份
 - **🔧 编译参数更新**：添加 `--sysconfdir` 参数指定配置文件目录
 
@@ -865,7 +930,7 @@ sudo bash /www/wwwroot/GoAccess-Manage/脚本/安装GoAccess.sh
 ### 🔧 配置优化
 
 #### 📋 配置模板更新 (配置模板.conf)
-- **📂 GeoIP 路径更新**：将 GeoIP 数据库路径从系统路径 `/usr/share/GeoIP` 改为项目目录 `/www/wwwroot/GoAccess-管理/GeoIP`
+- **📂 GeoIP 路径更新**：将 GeoIP 数据库路径从系统路径 `/usr/share/GeoIP` 改为项目目录 `/www/wwwroot/GoAccess-Manage/GeoIP`
 - **📝 注释说明优化**：更新注释说明，明确使用脚本目录下的 GeoIP 目录
 - **🎯 路径一致性**：确保配置模板与安装脚本创建的 GeoIP 目录结构保持一致
 
@@ -1180,7 +1245,7 @@ sudo bash /www/wwwroot/GoAccess-Manage/脚本/安装GoAccess.sh
 ### 📝 文档更新
 
 #### 项目名称规范化
-- **🔄 统一命名**: 将项目中所有 `goaccess-管理` 统一修改为 `GoAccess-管理`
+- **🔄 统一命名**: 将项目中所有 `goaccess-管理` 统一修改为 `GoAccess-Manage`
   - 涉及 README.md 和 部署配置.sh
   - 保持命名一致性，提升品牌形象
 
