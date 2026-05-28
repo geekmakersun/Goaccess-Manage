@@ -2,9 +2,7 @@
 
 # GoAccess 多站点管理系统
 
-**版本：v3.4.3** | **最后更新：2026-05-28 22:25**
-
-## 📊 访问统计
+**版本：v3.4.4** | **最后更新：2026-05-28 22:28**
 
 ![访客数量](https://visitor-badge.laobi.icu/badge?page_id=geekmakersun.GoAccess-Manage&style=flat-square)
 
