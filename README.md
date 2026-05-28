@@ -9,7 +9,6 @@
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey?style=flat-square)
 ![Shell](https://img.shields.io/badge/shell-Bash-blue?style=flat-square)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![GoAccess](https://img.shields.io/badge/GoAccess-Latest-brightgreen.svg)](https://goaccess.io/)
 
 [📖 更新日志](CHANGELOG.md) | [📋 快速入门](文档/GoAccess快速入门指南.md) | [🌍 GeoIP说明](文档/GeoIP/使用说明.md)
 
