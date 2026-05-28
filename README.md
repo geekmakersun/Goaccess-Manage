@@ -1,6 +1,6 @@
 # GoAccess 多站点管理系统
 
-**版本：v3.3.9** | **最后更新：2026-05-28 15:54**
+**版本：v3.4.0** | **最后更新：2026-05-28 22:05**
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![GoAccess](https://img.shields.io/badge/GoAccess-Latest-brightgreen.svg)](https://goaccess.io/)
