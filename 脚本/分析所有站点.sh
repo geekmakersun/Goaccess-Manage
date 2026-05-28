@@ -27,7 +27,7 @@ readonly SCRIPT_NAME="$(basename "$0")"              # 脚本文件名
 readonly SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)" # 脚本所在目录（绝对路径）
 readonly PROJECT_DIR="$(dirname "$SCRIPT_DIR")"      # 项目根目录（脚本目录的上级）
 readonly CONFIG_DIR="$PROJECT_DIR/配置/站点配置"     # 站点配置目录
-readonly LOG_DIR="/var/log"                  # 日志目录
+readonly LOG_DIR="$PROJECT_DIR/日志"           # 日志目录（放在项目目录下，确保 www 用户有权限写入）
 readonly RUN_LOG="$LOG_DIR/分析运行日志.log"       # GoAccess运行日志文件
 readonly AUDIT_LOG="$LOG_DIR/审计日志.log"         # 审计日志文件
 

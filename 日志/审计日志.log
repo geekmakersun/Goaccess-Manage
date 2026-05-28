@@ -1,0 +1,4 @@
+2026-05-28 15:38:47 | HOST=localhost | FROM=root(0) -> TO=root(0) | TTY=/dev/pts/8 | PWD=/www/wwwroot/GoAccess-Manage | SCRIPT=分析所有站点.sh | ACTION=SCRIPT_START | ARGS=
+2026-05-28 15:38:47 | HOST=localhost | FROM=root(0) -> TO=root(0) | TTY=/dev/pts/8 | PWD=/www/wwwroot/GoAccess-Manage | SCRIPT=分析所有站点.sh | ACTION=USER_SWITCH_RECOMMENDED | CURRENT_USER=root | RECOMMENDED_USER=www
+2026-05-28 15:38:47 | HOST=localhost | FROM=root(0) -> TO=root(0) | TTY=/dev/pts/8 | PWD=/www/wwwroot/GoAccess-Manage | SCRIPT=分析所有站点.sh | ACTION=STATISTICS | SUCCESS=1 | FAIL=0 | SKIP=0
+2026-05-28 15:38:48 | HOST=localhost | FROM=root(0) -> TO=root(0) | TTY=/dev/pts/8 | PWD=/www/wwwroot/GoAccess-Manage | SCRIPT=分析所有站点.sh | ACTION=SCRIPT_END | EXIT_CODE=0
