@@ -27,6 +27,25 @@
 
 ---
 
+---
+
+## [v3.6.0] - 2026-05-28 23:50 🎨 📝
+
+<details>
+<summary>展开查看详情</summary>
+
+### 🎨 样式更新
+- 精简 README.md 徽标列表
+- 删除 GitHub Stars、Forks、Contributors、Issues、Last Commit 徽标
+- 删除 GitHub Code Size 徽标（shields.io 服务不可用）
+- 保留核心徽标：Version、Last Update、访客数量、Language、Platform、Shell、License、GoAccess
+
+### 📝 文档更新
+- 更新修改更新日志，并提交代码命令文档
+- 说明徽标格式和日期时间格式
+
+</details>
+
 ## [v3.5.6] - 2026-05-28 23:33 📝
 
 <details>
