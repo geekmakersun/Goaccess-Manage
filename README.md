@@ -2,9 +2,8 @@
 
 # GoAccess 多站点管理系统
 
-![版本](https://img.shields.io/badge/版本-v3.9.4-blue?style=flat-square)
-![最后更新](https://img.shields.io/badge/最后更新-2026.05.30%2014:10-orange?style=flat-square)
-![访客数量](https://komarev.com/ghpvc/?username=geekmakersun&repo=GoAccess-Manage&style=flat-square&color=blueviolet&label=访客数量)
+![版本](https://img.shields.io/badge/版本-v3.9.5-blue?style=flat-square)
+![最后更新](https://img.shields.io/badge/最后更新-2026.05.30%2014:15-orange?style=flat-square)
 [![开发语言](https://img.shields.io/github/languages/top/geekmakersun/GoAccess-Manage?style=flat-square)](https://github.com/geekmakersun/GoAccess-Manage)
 ![平台](https://img.shields.io/badge/平台-Linux%20%7C%20macOS-lightgrey?style=flat-square)
 ![脚本环境](https://img.shields.io/badge/脚本环境-Bash-blue?style=flat-square)
