@@ -37,8 +37,8 @@
 
 #### 📜 发布工作流拆分优化
 - **✨ 工作流拆分**：将原有的"完整发布工作流"拆分为两个独立的工作流命令
-  - 新增 [主仓库发布工作流.md](file:///home/www/GoAccess-Manage/.trae/commands/主仓库发布工作流.md) - 主仓库专用，支持更新 CHANGELOG.md
-  - 新增 [衍生版发布工作流.md](file:///home/www/GoAccess-Manage/.trae/commands/衍生版发布工作流.md) - 衍生仓库专用，不修改版本文件
+  - 新增 [主仓库发布工作流.md](.trae/commands/主仓库发布工作流.md) - 主仓库专用，支持更新 CHANGELOG.md
+  - 新增 [衍生版发布工作流.md](.trae/commands/衍生版发布工作流.md) - 衍生仓库专用，不修改版本文件
 - **🗑️ 移除旧文件**：删除原有的"完整发布工作流.md"文件
 - **🎯 移除 README 更新步骤**：主仓库发布工作流不再自动更新 README.md 版本徽标，避免版本信息不一致问题
 
