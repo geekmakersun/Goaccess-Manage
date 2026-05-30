@@ -28,6 +28,32 @@
 ---
 
 ---
+## [v3.9.7] - 2026-05-30 22:30 🔧
+
+<details>
+<summary>展开查看详情</summary>
+
+### 🔧 工具更新
+
+#### 📜 脚本可执行权限修复
+- **🔧 修复脚本权限**：将所有脚本文件从普通文件权限（644）修改为可执行权限（755）
+- **✅ 涉及脚本**：
+  - [脚本/分析所有站点.sh](file:///home/www/GoAccess-Manage/脚本/分析所有站点.sh)
+  - [脚本/卸载GoAccess.sh](file:///home/www/GoAccess-Manage/脚本/卸载GoAccess.sh)
+  - [脚本/安装GoAccess.sh](file:///home/www/GoAccess-Manage/脚本/安装GoAccess.sh)
+  - [脚本/更新GeoLite2.sh](file:///home/www/GoAccess-Manage/脚本/更新GeoLite2.sh)
+  - [脚本/配置审计系统.sh](file:///home/www/GoAccess-Manage/脚本/配置审计系统.sh)
+
+### 💡 设计说明
+
+#### 🎯 权限修复原因
+- 脚本文件需要可执行权限才能直接运行（如 `./脚本/安装GoAccess.sh`）
+- Git 在 Windows 和 Linux 之间同步时可能导致权限丢失
+- 使用 `git update-index --chmod=+x` 或直接修改文件权限模式确保脚本可执行
+
+</details>
+
+---
 ## [v3.9.6] - 2026-05-30 20:48 📝
 
 <details>
