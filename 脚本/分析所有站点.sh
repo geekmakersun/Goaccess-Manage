@@ -577,7 +577,7 @@ echo ""
 log_section "5/5" "完成"
 
 echo -e "${CYAN}访问报告：${NC}"
-echo "在浏览器中打开各站点的 site-log.html 查看分析报告"
+echo "在浏览器中打开各站点的 /log/ 查看分析报告"
 echo ""
 
 # 记录审计信息：成功、失败、跳过的站点数
