@@ -741,11 +741,79 @@ install_deps() {
             
             # 先尝试安装 epel-release（如果需要）
             if [ "$PKG_MANAGER" = "yum" ] || [ "$PKG_MANAGER" = "dnf" ]; then
-                if ! rpm -q epel-release &>/dev/null && [ "$ID" != "fedora" ]; then
-                    log_info "检测到 EPEL 仓库未安装，正在安装..."
-                    $PKG_MANAGER install -y epel-release || log_warning "EPEL 仓库安装失败，可能需要手动安装"
-                else
+                # 检查是否已安装 EPEL 相关包
+                local has_epel=false
+                local has_aliyuncs_epel=false
+                
+                if rpm -q epel-release &>/dev/null; then
+                    has_epel=true
                     log_info "  ✓ epel-release 已安装"
+                fi
+                
+                if rpm -q epel-aliyuncs-release &>/dev/null; then
+                    has_aliyuncs_epel=true
+                    log_info "  ✓ epel-aliyuncs-release 已安装（阿里云 EPEL 源）"
+                fi
+                
+                # 如果都没有安装 EPEL，尝试安装
+                if [ "$has_epel" = false ] && [ "$has_aliyuncs_epel" = false ] && [ "$ID" != "fedora" ]; then
+                    log_info "检测到 EPEL 仓库未安装，正在安装..."
+                    
+                    install_epel_success=false
+                    
+                    # 方法1: 先尝试正常安装
+                    if $PKG_MANAGER install -y epel-release 2>&1 | tee /tmp/epel_install.log; then
+                        install_epel_success=true
+                        log_success "EPEL 仓库安装成功"
+                    else
+                        # 检查是否是包冲突错误
+                        if grep -q "conflicts with\|冲突\|epel-aliyuncs-release" /tmp/epel_install.log 2>/dev/null; then
+                            log_warning "检测到包冲突（可能与阿里云 EPEL 源冲突）"
+                            
+                            # 方法2: 使用 --allowerasing 解决冲突
+                            log_info "尝试方法 1/3: 使用 --allowerasing 选项..."
+                            if $PKG_MANAGER install -y --allowerasing epel-release 2>&1 | tee /tmp/epel_install.log; then
+                                install_epel_success=true
+                                log_success "EPEL 仓库安装成功（已解决包冲突）"
+                            else
+                                # 方法3: 使用 --skip-broken 跳过冲突
+                                log_info "尝试方法 2/3: 使用 --skip-broken 选项..."
+                                if $PKG_MANAGER install -y --skip-broken epel-release 2>&1 | tee /tmp/epel_install.log; then
+                                    install_epel_success=true
+                                    log_success "EPEL 仓库安装成功（已跳过冲突包）"
+                                else
+                                    # 方法4: 尝试先移除阿里云 EPEL 源，再安装标准 EPEL
+                                    if rpm -q epel-aliyuncs-release &>/dev/null; then
+                                        log_info "尝试方法 3/3: 移除阿里云 EPEL 源后重新安装..."
+                                        log_warning "将移除 epel-aliyuncs-release 并安装标准 epel-release"
+                                        
+                                        if rpm -e --nodeps epel-aliyuncs-release 2>/dev/null; then
+                                            log_info "已移除阿里云 EPEL 源"
+                                            if $PKG_MANAGER install -y epel-release; then
+                                                install_epel_success=true
+                                                log_success "EPEL 仓库安装成功（已替换阿里云源）"
+                                            fi
+                                        fi
+                                    fi
+                                fi
+                            fi
+                        else
+                            log_warning "EPEL 仓库安装失败，可能需要手动安装"
+                        fi
+                    fi
+                    
+                    # 如果所有方法都失败，给出提示
+                    if [ "$install_epel_success" = false ]; then
+                        log_warning "EPEL 仓库自动安装失败"
+                        log_info "您可以尝试以下手动安装方法："
+                        log_info "  方法1: sudo $PKG_MANAGER install -y --allowerasing epel-release"
+                        log_info "  方法2: sudo $PKG_MANAGER install -y --skip-broken epel-release"
+                        log_info "  方法3: 如果使用阿里云，可以保留现有 epel-aliyuncs-release"
+                        log_info "继续安装流程，部分依赖可能无法安装..."
+                    fi
+                    
+                    # 清理临时日志
+                    rm -f /tmp/epel_install.log 2>/dev/null || true
                 fi
             fi
             
