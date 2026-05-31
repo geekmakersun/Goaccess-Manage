@@ -28,6 +28,39 @@
 ---
 
 ---
+## [v3.9.10] - 2026-05-31 21:30 🔧 🛡️
+
+<details>
+<summary>展开查看详情</summary>
+
+### 🔧 工具更新
+
+#### 📜 工作流命令现代化改进
+- **🔄 使用 sudo -u www 替代 su - www**：采用更现代化的用户切换方式
+- **🛡️ 权限修复**：修复 .git 目录权限问题，确保 www 用户可以正常操作
+- **✨ 命令简化**：移除不必要的 `cd $(pwd)` 命令，直接使用 sudo -u 执行
+- **📝 文档更新**：更新两个工作流文件中的所有 Git 命令示例
+
+#### 📄 修改的文件
+- [.trae/commands/主仓库发布工作流.md](file:///home/www/GoAccess-Manage/.trae/commands/主仓库发布工作流.md) - 所有命令改为 sudo -u www 方式
+- [.trae/commands/衍生版发布工作流.md](file:///home/www/GoAccess-Manage/.trae/commands/衍生版发布工作流.md) - 所有命令改为 sudo -u www 方式
+
+### 💡 设计说明
+
+#### 🎯 改进原因
+- **现代化**：sudo -u 是现代 Linux 系统管理的最佳实践
+- **简洁性**：命令更简洁，不需要额外的 cd 和引号处理
+- **安全性**：sudo 提供更好的权限控制和审计日志
+- **兼容性**：避免 su 命令在不同环境下的兼容性问题
+
+#### 🔄 主要变更
+1. `su - www -c "cd $(pwd) && git ..."` → `sudo -u www git ...`
+2. 修复 .git 目录权限为 www:www
+3. 简化所有 Git 操作命令
+
+</details>
+
+---
 ## [v3.9.9] - 2026-05-31 01:00 📝 🔧
 
 <details>
